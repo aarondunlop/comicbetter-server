@@ -4,7 +4,7 @@ directories:
     read: /Users/aaron/comics/read/
 
 comicvine:
-    apikey: 
+    apikey:
 
 mysql:
    database:
@@ -18,3 +18,9 @@ email:
   sespass:
   region: us-east-1
   from:
+
+  firebase:
+    apiKey:
+    authDomain:
+    databaseURL:
+    storageBucket: 
