@@ -1,0 +1,20 @@
+directories:
+    comics: /tmp/comics/
+    images: /Users/aaron/comics/images/
+    read: /Users/aaron/comics/read/
+
+comicvine:
+    apikey: 
+
+mysql:
+   database:
+   user:
+   pass:
+   host:
+   port:
+
+email:
+  sesaccess:
+  sespass:
+  region: us-east-1
+  from:

@@ -1,0 +1,14 @@
+app:
+     debug: True
+     name: ComicBetter
+
+schema:
+    engine: sqlite
+
+flask:
+    secret: 
+    salt: 
+    csrf: 
+
+sqlite:
+    name: var/app.db

@@ -1,0 +1,6 @@
+/comic/issue/id/$id (comic.id) GET - comic.id
+/comic/issue/cvid/$id (comic.id) GET - comic.cvid
+/comic/issue/series/$id (comic.id) GET - comic.series.id
+/comic/issue/cover/$id/$id (comic.id, image.id)
+/comic/series/$id (series.id) GET - series.id
+/comic/series/$name (series.name) POST 
