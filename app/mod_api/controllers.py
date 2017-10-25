@@ -45,25 +45,21 @@ def login():
     if not password:
         return jsonify({"msg": "Missing password parameter"}), 400
 
-    if username != 'test' or password != 'test':
+    user=User(username=username, password=password)
+    if not user.verify_password():
         return jsonify({"msg": "Bad username or password"}), 401
 
     access_token = create_access_token(identity=username)
     return jsonify(access_token=access_token), 200
 
-@mod_api.route('/protected', methods=['GET'])
-@jwt_required
-def protected():
-    # Access the identity of the current user with get_jwt_identity
-    current_user = get_jwt_identity()
-    return jsonify(logged_in_as=current_user), 200
-
 @mod_api.route('/issues', methods=['GET', 'POST'])
+@jwt_required
 def mod_issue_list():
     if request.method == 'GET':
         return jsonify(issues_list())
 
 @mod_api.route('/issue/series/<int:id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_issues_list_by_series(id):
     issues=Issue(limit = request.args.get('limit', 5), page=request.args.get('page', 0), series_id=id)
     if request.method == 'GET':
@@ -80,6 +76,7 @@ def mod_issues_list_by_series(id):
         return 'ok'
 
 @mod_api.route('/issue/<int:issue_id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_issues_update_by_id(issue_id):
     if request.method == 'POST':
         issue = issues_get_by_issueid(issue_id)
@@ -100,6 +97,7 @@ def mod_issues_update_by_id(issue_id):
 
 
 @mod_api.route('/series', methods=['GET', 'POST'])
+@jwt_required
 def mod_series_list():
     series=Series(limit = request.args.get('limit', 2500), page=request.args.get('page', 0))
     if request.method == 'GET':
@@ -107,6 +105,7 @@ def mod_series_list():
 
 #This sets the series ID + other factors. Usually tag cvid=x in the URI.
 @mod_api.route('/series/<int:series_id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_series_update_by_id(series_id):
     if request.method == 'POST':
         series = series_get_by_seriesid(series_id).id
@@ -116,11 +115,13 @@ def mod_series_update_by_id(series_id):
         return jsonify({ key: value for key, value in list(series_get_by_seriesid(series_id).__dict__.items()) if not key == "_sa_instance_state" })
 
 @mod_api.route('/process/issue/<int:issue_id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_process_issue_by_id():
     if request.method == 'GET':
         return jsonify(process_issue_by_id(issue_id))
 
 @mod_api.route('/process/series/issue/<int:issue_id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_process_issue_series(issue_id):
     if request.method == 'GET':
         force = False
@@ -129,22 +130,26 @@ def mod_process_issue_series(issue_id):
         return jsonify(process_series_by_issue_id(issue_id, force))
 
 @mod_api.route('/process/library/files', methods=['GET', 'POST'])
+@jwt_required
 def mod_scan_library_files():
     if request.method == 'GET':
         return jsonify(scan_library_path())
 
 @mod_api.route('/process/library/cv/series/cvid/<int:series_id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_scan_library_cv_series(series_id):
     if request.method == 'GET':
         return jsonify(process_cv_get_series_cvid_by_id(series_id))
 
 @mod_api.route('/process/library/cv/series/<int:series_id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_scan_library_cv_series_cvid(series_id):
     if request.method == 'POST':
          process_cv_get_series_details_by_id(series_id)
     return jsonify('ok')
 
 @mod_api.route('/process/library/cv/issue/<int:issue_id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_scan_library_cv_issue_cvid(issue_id):
     if request.method == 'POST':
          process_cv_get_issue_details_by_id(issue_id)
@@ -153,6 +158,7 @@ def mod_scan_library_cv_issue_cvid(issue_id):
     return jsonify('ok')
 
 @mod_api.route('/devices/', methods=['GET', 'POST'])
+@jwt_required
 def api_devices():
     device = Device()
     if request.method == 'POST':
@@ -161,6 +167,7 @@ def api_devices():
         return jsonify(device.get_all())
 
 @mod_api.route('/devices/<int:id>', methods=['GET', 'POST'])
+@jwt_required
 def api_device_details(id):
     device = Device(id=id, **request.args)
     if request.method == 'POST':
@@ -169,6 +176,7 @@ def api_device_details(id):
         return jsonify(device.get_all())
 
 @mod_api.route('/device/sync/<int:id>', methods=['GET', 'POST'])
+@jwt_required
 def api_device_sync(id):
     add = request.args.get('add').split(",") if request.args.get('add') else None
     remove = request.args.get('remove').split(",") if request.args.get('remove') else None
@@ -178,6 +186,7 @@ def api_device_sync(id):
         return jsonify(synced(id))
 
 @mod_api.route('/issue/cover/<int:id>', methods=['GET', 'POST'])
+@jwt_required
 def api_issue_return_covers(id):
     if request.method == 'GET' and request.args.get('size'):
         covers = ImageGetter(id=id, size=request.args.get('size'))
@@ -196,6 +205,7 @@ def api_issue_return_covers(id):
             return jsonify()
 
 @mod_api.route('/series/cover/<int:id>', methods=['GET', 'POST'])
+@jwt_required
 def api_series_return_covers(id):
     print(id)
     if request.method == 'GET' and request.args.get('size'):
@@ -214,6 +224,7 @@ def api_series_return_covers(id):
         return jsonify(coverlist)
 
 @mod_api.route('/issue/image/<int:id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_issue_images(id):
     if request.method == 'GET' and not request.args.get('page'):
         pages = ImageGetter(id=id)
@@ -225,12 +236,14 @@ def mod_issue_images(id):
     return 'ok'
 
 @mod_api.route('/process/library/cv/issue/covers/<int:id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_cv_get_issue_covers(id):
     if request.method == 'POST' or request.method == 'GET':
         #print 'this works.'
         return(process_cv_get_issue_covers(id))
 
 @mod_api.route('/process/library/cv/series/covers/<int:id>', methods=['GET', 'POST'])
+@jwt_required
 def mod_cv_get_series_covers(id):
     if request.method == 'POST' or request.method == 'GET':
         process_cv_get_series_covers(id)
