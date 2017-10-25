@@ -83,3 +83,7 @@ class SBConfig(object):
     @staticmethod
     def get_firebase_conf():
         return SBConfig.cfg()['firebase']
+
+    @staticmethod
+    def get_jwt_secret():
+        return SBConfig.cfg()['jwt']['secret']

@@ -8,6 +8,9 @@ from .zip import SBZip
 from app.models import Issue #, issue_get_file
 from app.models import Series #, series_get_file
 
+import logging
+logger = logging.getLogger(__name__)
+
 class ImageGetter(object):
     def __init__(self, **kwargs):
         self.filepath=''

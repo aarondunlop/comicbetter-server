@@ -1,4 +1,7 @@
 import py7zlib
+import logging
+logger = logging.getLogger(__name__)
+
 class SevenZFile(object):
     @classmethod
     def is_7zfile(cls, filepath):

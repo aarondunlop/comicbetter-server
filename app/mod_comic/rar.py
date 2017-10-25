@@ -1,6 +1,8 @@
 import rarfile
 from config import SBConfig
 import os.path
+import logging
+logger = logging.getLogger(__name__)
 
 class SBRar(object):
     def __init__(self, filename, id=None):

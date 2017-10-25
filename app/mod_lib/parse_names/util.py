@@ -25,6 +25,9 @@ from app.models import Issue
 __keys_cache = None
 
 from config import SBConfig
+import logging
+
+logger = logging.getLogger(__name__)
 
 #temp = SBConfig.update_cfg('fix_me')
 

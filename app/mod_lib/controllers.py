@@ -14,7 +14,7 @@ from app.mod_lib import libconf, libfolder
 
 # Import module forms
 from app.mod_lib.forms import *
-from app.mod_lib.extractimages import ComicImageExtracter 
+from app.mod_lib.extractimages import ComicImageExtracter
 
 # Import utils
 from app.mod_lib.parse_names.util import scancomics
@@ -23,9 +23,12 @@ from app.mod_lib.parse_names.util import scancomics
 #from app.mod_lib.models import *
 
 from app.mod_lib.parse_names.comicimporter import MetadataImporter
-from app.mod_lib.parse_names.fnameparser import extract as extractname 
+from app.mod_lib.parse_names.fnameparser import extract as extractname
 
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 mako = MakoTemplates(app)
 app.config['MAKO_PREPROCESSOR'] = preprocessor
@@ -81,7 +84,7 @@ def mod_lib_parse_full():
 # Set the route and accepted methods
 @mod_lib.route('/comic/issue/cvid', methods=['GET', 'POST'])
 def mod_lib_issue_cvid():
-    ids = request.args.get('id') 
+    ids = request.args.get('id')
     #if request.method == 'GET':
         #comic = db.session.query(Issue.filter_by(id=id).first()
         #importer = MetadataImporter()
@@ -93,7 +96,7 @@ def mod_lib_issue_cvid():
         print(ids)
     return redirect(url_for('lib.comiclist'))
 
-# Given an ID passed as a param, scrapes the CV API and presents most likely hits. User clicks to select, pops the current id param, and re-iterates. 
+# Given an ID passed as a param, scrapes the CV API and presents most likely hits. User clicks to select, pops the current id param, and re-iterates.
 @mod_lib.route('/comic/series', methods=['GET', 'POST'])
 def mod_lib_get_series_id():
     id = ''
@@ -151,10 +154,10 @@ def mod_lib_parse_scan():
 @mod_lib.route('/image/cover/<int:id>', methods=['GET', 'POST'])
 def mod_lib_get_covers(id):
     if request.args.get('url'):
-        print(request.args.get('url')) 
+        print(request.args.get('url'))
     if request.method == 'GET':
         issue = db.session.query(Issue).filter_by(id=id).first()
-        importer = MetadataImporter() 
+        importer = MetadataImporter()
         print(importer)
         print(issue.id)
         print(id)
@@ -162,11 +165,11 @@ def mod_lib_get_covers(id):
         print(importer)
         #icon_url, medium_url, tiny_url,small_url, thumb_url,screen_url,super_url
         #print comic.cover
-         
+
     #elif request.method == 'POST':
     #    issue = db.session.query(Issue).filter_by(id=id).first()
     #    print issue.cover
-        
+
     #return render_template('lib/image.mako', issue=issue, app_name=app.config['SITE_NAME'])
     return redirect(url_for('lib.comiclist'))
 

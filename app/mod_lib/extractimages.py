@@ -9,6 +9,9 @@ from app import app
 
 from app.mod_lib.parse_names import *
 from app.models.main import *
+import logging
+
+logger = logging.getLogger(__name__)
 
 class ComicImageExtracter(object):
 
@@ -96,7 +99,7 @@ class ComicImageExtracter(object):
         cover = ''
 
         # File validation
-        #if utils.valid_comic_file(filename):            
+        #if utils.valid_comic_file(filename):
         # Copy file to temp directory
         copyfile(file, tempfile)
         os.chmod(tempfile, 0o777)
@@ -129,10 +132,10 @@ class ComicImageExtracter(object):
         if os.path.isfile(tempfile):
             os.remove(tempfile)
         elif os.path.isfile(comic_file):
-            os.remove(comic_file)    
+            os.remove(comic_file)
 
         return cover
-        
+
 
     #==================================================================================================
 
@@ -189,7 +192,7 @@ class ComicImageExtracter(object):
 
     def _normalise_imagepath(self, filepath):
         '''    Returns a normalised image path. '''
-        
+
         path_normalise = re.compile(r"[/\\]")
 
         filepath_parts = path_normalise.sub("`", filepath).split('`')

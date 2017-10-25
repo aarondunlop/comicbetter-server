@@ -10,9 +10,8 @@ from .series import *
 from .settings import *
 from .team import *
 from .device import Device
+from .user import User
 import json
-
-###TODO, move almost all of this into model classes.
 
 def issues_list():
     issues = db.session.query(Issue).all()
@@ -46,7 +45,7 @@ def issues_get_by_filename(filename):
 
 def issues_get_by_issueid(issue_id):
     issue = db.session.query(Issue).filter_by(id=issue_id).first()
-    return issue 
+    return issue
 
 def series_get_by_seriesid(series_id):
     return db.session.query(Series).filter_by(id=series_id).first() or False

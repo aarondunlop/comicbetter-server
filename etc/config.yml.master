@@ -1,7 +1,7 @@
 directories:
-    comics: /tmp/comics/
-    images: /Users/aaron/comics/images/
-    read: /Users/aaron/comics/read/
+    comics: /data/comics/comics
+    images: /data/comics/images
+    read: /data/comics/read
 
 comicvine:
     apikey:
@@ -19,8 +19,11 @@ email:
   region: us-east-1
   from:
 
-  firebase:
-    apiKey:
-    authDomain:
-    databaseURL:
-    storageBucket: 
+firebase:
+  apiKey:
+  authDomain:
+  databaseURL:
+  storageBucket:
+
+jwt:
+  secret:

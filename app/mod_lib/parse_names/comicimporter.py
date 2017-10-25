@@ -19,12 +19,12 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
 from app import db, app
-
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 
 #sess = CacheControl(requests.Session(), cache=FileCache('./comicvine-cache'), heuristic=ExpiresAfter(days=1))
-forever_cache = FileCache('./comicvine-cache', forever=True)
+forever_cache = FileCache('./var/comicvine-cache', forever=True)
 sess = CacheControl(requests.Session(), forever_cache, heuristic=ExpiresAfter(days=1))
 
 class MetadataImporter(object):

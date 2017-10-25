@@ -3,12 +3,10 @@
 #from plim import preprocessor
 from flask import Blueprint, request, jsonify, send_file, abort
 
-#from bluemonk.models.hotel import Hotel
-
 # Import the database object from the main app module
 from app import db, app
 from app.mod_lib.extractimages import *
-from app.models import issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced, Series, Issue
+from app.models import issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced, Series, Issue, User
 from app.mod_lib import scan_library_path, process_series_by_issue_id, process_cv_get_series_cvid_by_id, process_cv_get_series_details_by_id, process_cv_get_issue_details_by_id, process_cv_get_issue_covers, process_cv_get_series_covers, get_issue_covers, get_series_covers
 from app.mod_comic import ImageGetter
 from app.mod_devices import SBDevices
@@ -16,45 +14,49 @@ mod_api = Blueprint('api', __name__, url_prefix='/api')
 import json
 from config import SBConfig
 
-#Auth
-import pyrebase
-from flask_jwt import JWT, jwt_required
+#JWT stuff
+from flask_jwt_extended import (
+    JWTManager, jwt_required, create_access_token,
+    get_jwt_identity
+)
+app.config['JWT_SECRET_KEY'] = SBConfig.get_jwt_secret()
+jwt = JWTManager(app)
 
-firebaseconfig = SBConfig.get_firebase_conf()
+#Logging
+import logging
+logger = logging.getLogger(__name__)
 
-firebase = pyrebase.initialize_app(firebaseconfig)
-auth = firebase.auth()
+@mod_api.route('/password', methods=['POST'])
+def password_set(**kwargs):
+    username = request.json.get('username', None)
+    password = request.json.get('password', None)
+    user=User(username=username, password=password)
+    user.update_or_create()
+    user.update_password()
+    return(username)
 
-class FBUser(object):
-    def __init__(self, id):
-        self.id = id
 
-    def __str__(self):
-        return "User(id='%s')" % self.id
+@mod_api.route('/login', methods=['POST'])
+def login():
+    username = request.json.get('username', None)
+    password = request.json.get('password', None)
+    if not username:
+        return jsonify({"msg": "Missing username parameter"}), 400
+    if not password:
+        return jsonify({"msg": "Missing password parameter"}), 400
 
-def verify(username, password):
-    if not (username and password):
-        return False
-    if auth.get(username) == password:
-        return FBUser(id=123)
+    if username != 'test' or password != 'test':
+        return jsonify({"msg": "Bad username or password"}), 401
 
-def identity(payload):
-    user_id = payload['identity']
-    return {"user_id": user_id}
+    access_token = create_access_token(identity=username)
+    return jsonify(access_token=access_token), 200
 
-jwt = JWT(app, verify, identity)
-
-@mod_api.route('/auth', methods=['POST'])
-#@jwt_required()
-def mod_auth():
-    print(request.json)
-    return 'ok'
-    #user = auth.sign_in_with_email_and_password('testing@tuxbiker.com', 'testing')
-    #user2 = auth.get_account_info(user['idToken'])
-    #print(user)
-    #print(user2)
-    #return jsonify(user)
-
+@mod_api.route('/protected', methods=['GET'])
+@jwt_required
+def protected():
+    # Access the identity of the current user with get_jwt_identity
+    current_user = get_jwt_identity()
+    return jsonify(logged_in_as=current_user), 200
 
 @mod_api.route('/issues', methods=['GET', 'POST'])
 def mod_issue_list():
