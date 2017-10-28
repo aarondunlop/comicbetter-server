@@ -22,26 +22,6 @@ from flask_jwt_extended import (
 app.config['JWT_SECRET_KEY'] = SBConfig.get_jwt_secret()
 jwt = JWTManager(app)
 
-
-@app.before_request
-def log_request_info():
-    app.logger.debug('Request Headers: %s', request.headers)
-    app.logger.debug('Request Body: %s', request.get_data())
-
-@app.after_request
-def log_response_info(response):
-    app.logger.debug('Response Headers: %s', response.headers)
-    app.logger.debug('Response Body: %s', response.data.decode('utf-8'))
-    app.logger.debug('Response Status: %s', response.status)
-
-    #app.logger.debug('response: ' + response.status + ', ' + response.data.decode('utf-8'))
-    return response
-
-#@app.after_request
-#def after(response):
-#    app.logger.debug('response: ' + response.status + ', ' + response.data.decode('utf-8'))#
-    #return response
-
 @mod_api.route('/password', methods=['POST'])
 def password_set(**kwargs):
     username = request.json.get('username', None)

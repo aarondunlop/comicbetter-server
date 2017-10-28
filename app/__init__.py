@@ -24,21 +24,32 @@ db = SQLAlchemy(app)
 #Session = sessionmaker(bind=engine)
 #session = Session()
 
-# Sample HTTP error handling
-@app.errorhandler(404)
-def not_found(error):
-    app.logger.error(exception)
-    return render_template('404.html'), 404
+@app.before_request
+def log_request_info():
+    app.logger.debug('Request Headers: %s', request.headers)
+    app.logger.debug('Request Body: %s', request.get_data())
+
+@app.after_request
+def log_response_info(response):
+    app.logger.debug('Response Headers: %s', response.headers)
+    app.logger.debug('Response Body: %s', response.data.decode('utf-8'))
+    app.logger.debug('Response Status: %s', response.status)
+    return response
 
 @app.errorhandler(500)
 def internal_error(exception):
     app.logger.error(exception)
-    return render_template('500.html'), 500
+    return flask.make_response('server error', 500)
+
+@app.errorhandler(400)
+def handle_bad_request(e):
+    app.logger.info('Bad request', e)
+    return flask.make_response('bad request', 400)
 
 if app.debug is not True:
     import logging
     from logging.handlers import RotatingFileHandler
-    file_handler = RotatingFileHandler('server.log', maxBytes=1024 * 1024 * 100, backupCount=20)
+    file_handler = RotatingFileHandler('/var/log/server.log', maxBytes=1024 * 1024 * 100, backupCount=20)
     file_handler.setLevel(logging.ERROR)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     file_handler.setFormatter(formatter)
