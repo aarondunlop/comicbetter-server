@@ -49,7 +49,7 @@ def handle_bad_request(e):
 if app.debug is not True:
     import logging
     from logging.handlers import RotatingFileHandler
-    file_handler = RotatingFileHandler('/var/log/server.log', maxBytes=1024 * 1024 * 100, backupCount=20)
+    file_handler = RotatingFileHandler('var/log/server.log', maxBytes=1024 * 1024 * 100, backupCount=20)
     file_handler.setLevel(logging.ERROR)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     file_handler.setFormatter(formatter)
