@@ -10,9 +10,9 @@ from app.models import issues_list, series_list, series_list_by_id, issues_list_
 from app.mod_lib import scan_library_path, process_series_by_issue_id, process_cv_get_series_cvid_by_id, process_cv_get_series_details_by_id, process_cv_get_issue_details_by_id, process_cv_get_issue_covers, process_cv_get_series_covers, get_issue_covers, get_series_covers
 from app.mod_comic import ImageGetter
 from app.mod_devices import SBDevices
-mod_api = Blueprint('api', __name__, url_prefix='/api')
 import json
 from config import SBConfig
+mod_api = Blueprint('api', __name__, url_prefix='/api')
 
 #JWT stuff
 from flask_jwt_extended import (
@@ -21,10 +21,6 @@ from flask_jwt_extended import (
 )
 app.config['JWT_SECRET_KEY'] = SBConfig.get_jwt_secret()
 jwt = JWTManager(app)
-
-#Logging
-import logging
-logger = logging.getLogger(__name__)
 
 @mod_api.route('/password', methods=['POST'])
 def password_set(**kwargs):
@@ -65,7 +61,7 @@ def mod_issues_list_by_series(id):
     if request.method == 'GET':
         values=['name', 'description', 'id']
         issuesjson = [dict(list(zip(values, [row.name, row.description if row.name and row.description else None, row.id]))) for row in issues.getserieslist()]
-        print(issuesjson)
+        app.logger.info(issuesjson)
         return jsonify(issuesjson)
 
         #return jsonify(issues_list_by_series(series_id))
@@ -80,7 +76,7 @@ def mod_issues_list_by_series(id):
 def mod_issues_update_by_id(issue_id):
     if request.method == 'POST':
         issue = issues_get_by_issueid(issue_id)
-        #print('thing is', issue_update_by_id(issue, **request.args))
+        #app.logger.info('thing is', issue_update_by_id(issue, **request.args))
         #return jsonify({ key: value for key, value in issue_update_by_id(issue, **request.args).__dict__.items() if not key == "_sa_instance_state" })
         return jsonify('saved')
     if request.method == 'GET':
@@ -207,12 +203,12 @@ def api_issue_return_covers(id):
 @mod_api.route('/series/cover/<int:id>', methods=['GET', 'POST'])
 @jwt_required
 def api_series_return_covers(id):
-    print(id)
+    app.logger.info(id)
     if request.method == 'GET' and request.args.get('size'):
         covers = ImageGetter(id=id, size=request.args.get('size'))
         file = covers.get_series_cover()
-        print('ok')
-        print(file)
+        app.logger.info('ok')
+        app.logger.info(file)
         if file:
             return send_file(file)
         else:
