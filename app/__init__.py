@@ -1,5 +1,5 @@
 # Import flask and template operators
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, make_response
 import logging
 
 # Import SQLAlchemy
@@ -39,12 +39,12 @@ def log_response_info(response):
 @app.errorhandler(500)
 def internal_error(exception):
     app.logger.error(exception)
-    return app.make_response('server error', 500)
+    return make_response('server error', 500)
 
 @app.errorhandler(400)
 def handle_bad_request(e):
     app.logger.info('Bad request', e)
-    return app.make_response('bad request', 400)
+    return make_response('bad request', 400)
 
 #if app.debug is not True:
 #    import logging
