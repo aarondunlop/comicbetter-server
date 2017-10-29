@@ -1,7 +1,7 @@
 import os
 import yaml
 
-with open("./etc/flask.yml", 'r') as ymlfile:
+with open("etc/flask.yml", 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 class FlaskConfig(object):
