@@ -1,0 +1,11 @@
+#!/bin/bash
+
+if [ ! -e "/etc/comicbetter/config.yml" ]; then
+        cp /var/lib/comicbetter/etc/config.yml.master /etc/comicbetter/config.yml
+fi
+
+if [ ! -e "/etc/comicbetter/flask.yml" ]; then
+        cp /var/lib/comicbetter/etc/flask.yml.master /etc/comicbetter/flask.yml
+fi
+
+python3.6 -u '/var/lib/comicbetter/run.py'
