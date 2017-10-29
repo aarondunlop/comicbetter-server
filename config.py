@@ -1,7 +1,7 @@
 import os
 import yaml
 
-with open("etc/flask.yml", 'r') as ymlfile:
+with open("/etc/comicbetter/flask.yml", 'r') as ymlfile:
     cfg = yaml.load(ymlfile)
 
 class FlaskConfig(object):
@@ -37,12 +37,12 @@ class FlaskConfig(object):
     DEBUG = cfg['app']['debug']
 
 class SBConfig(object):
-    with open('etc/config.yml', 'r') as ymlfile:
+    with open('/etc/comicbetter/config.yml', 'r') as ymlfile:
         sbcfg = yaml.load(ymlfile)
 
     @staticmethod
     def cfg():
-       with open('etc/config.yml', 'r') as ymlfile:
+       with open('/etc/comicbetter/config.yml', 'r') as ymlfile:
             cfg = yaml.load(ymlfile)
        return cfg
 

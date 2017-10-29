@@ -1,7 +1,7 @@
 directories:
-    comics: /data/comics/comics
-    images: /data/comics/images
-    read: /data/comics/read
+    comics: /var/comicbetter/comics
+    images: /var/comicbetter/images
+    read: /var/comicbetter/read
 
 comicvine:
     apikey:
