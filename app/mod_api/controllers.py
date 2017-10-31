@@ -17,7 +17,8 @@ mod_api = Blueprint('api', __name__, url_prefix='/api')
 #JWT stuff
 from flask_jwt_extended import (
     JWTManager, jwt_required, create_access_token,
-    get_jwt_identity
+    get_jwt_identity, jwt_refresh_token_required,
+    create_refresh_token
 )
 app.config['JWT_SECRET_KEY'] = SBConfig.get_jwt_secret()
 jwt = JWTManager(app)
@@ -43,9 +44,20 @@ def login():
     user=User(username=username, password=password)
     if not user.verify_password():
         return jsonify({"msg": "Bad username or password"}), 401
+    ret = {
+        'access_token': create_access_token(identity=username),
+        'refresh_token': create_refresh_token(identity=username)
+    }
+    return jsonify(ret), 200
 
-    access_token = create_access_token(identity=username)
-    return jsonify(access_token=access_token), 200
+@mod_api.route('/refresh', methods=['POST'])
+@jwt_refresh_token_required
+def refresh():
+    current_user = get_jwt_identity()
+    ret = {
+        'access_token': create_access_token(identity=current_user)
+    }
+    return jsonify(ret), 200
 
 @mod_api.route('/issues', methods=['GET', 'POST'])
 @jwt_required
