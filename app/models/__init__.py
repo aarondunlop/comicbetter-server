@@ -58,7 +58,7 @@ def issue_match_or_create(filename, filepath):
         #issue = Issue(filename=filename.decode('utf8', 'ignore'), filepath=filepath)
         issue = Issue(filename=filename, filepath=filepath)
         db.session.add(issue)
-        db.session.flush()
+        #db.session.flush()
         db.session.commit()
     return issue
 
