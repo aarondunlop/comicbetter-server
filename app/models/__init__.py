@@ -51,9 +51,12 @@ def series_get_by_seriesid(series_id):
     return db.session.query(Series).filter_by(id=series_id).first() or False
 
 def issue_match_or_create(filename, filepath):
-    issue = db.session.query(Issue).filter_by(filename=filename.decode('utf8', 'ignore')).first() or False
+    #issue = db.session.query(Issue).filter_by(filename=filename.decode('utf8', 'ignore')).first() or False
+    issue = db.session.query(Issue).filter_by(filename=filename).first() or False
+
     if not issue:
-        issue = Issue(filename=filename.decode('utf8', 'ignore'), filepath=filepath)
+        #issue = Issue(filename=filename.decode('utf8', 'ignore'), filepath=filepath)
+        issue = Issue(filename=filename, filepath=filepath)
         db.session.add(issue)
         db.session.flush()
         db.session.commit()

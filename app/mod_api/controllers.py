@@ -34,12 +34,8 @@ def password_set(**kwargs):
 
 @mod_api.route('/login', methods=['POST'])
 def login():
-    if request.is_json():
-        username = request.json.get('username', None)
-        password = request.json.get('password', None)
-    else:
-        username = 'testing'
-        password = 'testing'
+    username = request.json.get('username', None)
+    password = request.json.get('password', None)
     if not username:
         return jsonify({"msg": "Missing username parameter"}), 400
     if not password:
