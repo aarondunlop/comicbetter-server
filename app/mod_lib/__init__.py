@@ -1,7 +1,8 @@
-import os
 import yaml
 import json
 import requests
+import os
+import sys
 
 from app.models import Issue, issues_list, series_list, series_list_by_id, issues_list_by_series, get_all_issues, issues_get_by_filename, issues_get_by_issueid, series_match_or_save, issue_match_or_create, issue_update_by_id, series_update_or_create, series_get_by_seriesid, publisher_update_or_create, publisher_get_from_cvid, series_get_from_cvid, issue_update_or_create, issue_get_by_issueid
 from app.mod_lib.parse_names.comicimporter import MetadataImporter
@@ -13,21 +14,36 @@ from app.mod_lib.parse_names.util import remove_special_characters
 from config import SBConfig
 apikey = SBConfig.get_api_key()
 libfolder = SBConfig.get_lib_path()
+print(libfolder)
 folder=""
 
 import logging
+from os import scandir, walk
 
 logger = logging.getLogger(__name__)
 
+def scantree(path):
+    extensions = ['.jpeg', '.jpg', '.cbr', '.cbt', '.cbz']
+    for entry in os.scandir(path):
+        if not entry.name.startswith('.') and entry.is_dir(follow_symlinks=False):
+            yield from scantree(entry.path)
+        else:
+          ext = os.path.splitext(entry.name)[-1].lower()
+          if not entry.name.startswith('.') and ext in extensions:
+              yield entry
+
 def scan_library_path():
-    comicfilelist = [(file, os.path.join(root,file)) for folder in libfolder for root, dir, files in os.walk(folder) for file in files]
-    for comic, filename in comicfilelist:
-        ext = os.path.splitext(filename)[-1].lower()
-        extensions = ['.jpeg', '.jpg', '.cbr', '.cbt', '.cbz']
-        if ext in extensions:
-            issue = issue_match_or_create(comic, os.path.dirname(filename))
-            process_issue_by_id(issue.id)
-    return 'done'
+    comicfilelist = [(os.path.basename(entry.path), entry.path) for entry in scantree(libfolder)]
+
+    for filename, filepath in comicfilelist:
+        #print(comic)
+        #issue = issue_match_or_create(comic, os.path.dirname(filename))
+        issue=Issue(filename=filename, filepath=filepath, commit=False)
+        issue.issue_find_id()
+        issue.issue_update_or_create()
+        issue.issue_commit()
+        #process_issue_by_id(issue.id)
+    return comicfilelist
 
 def process_issue_by_id(issue_id):
     issue = issues_get_by_issueid(issue_id)

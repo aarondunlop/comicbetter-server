@@ -90,3 +90,34 @@ class Issue(Base):
         #issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id])) for row in issues]
         print(issues)
         return issues
+
+    def issue_find_id(self):
+        issue = db.session.query(Issue).filter_by(filepath=self.filepath).first() or False
+        if issue:
+            self.id = issue.id
+
+    def issue_commit(self):
+        try:
+            db.session.commit()
+            db.session.flush()
+        except:
+            db.session.rollback()
+            raise
+
+    def issue_update_or_create(self):
+        issue = db.session.query(Issue).filter_by(id=self.id).first() or False
+        #print(issue.cvid, issue.id, id, issue.description)
+        if not issue:
+            issue = Issue()
+        db.session.add(issue)
+        for key, value in self.kwargs.items():
+            newvalue=str(value[0]) if isinstance(value, list) else str(value)
+            setattr(issue, key, newvalue)
+
+        if self.commit:
+            try:
+                db.session.commit()
+                db.session.flush()
+            except:
+                db.session.rollback()
+                raise
