@@ -17,6 +17,8 @@ from .device import deviceissues
 from flask import request
 import json
 
+from .series import Series
+
 class Issue(Base):
     __tablename__ = 'issue'
     #series = relationship("Series", secondary=issueseries,back_populates="issues")
@@ -96,6 +98,13 @@ class Issue(Base):
         if issue:
             self.id = issue.id
 
+    def issue_find_by_path_or_id(self):
+        if self.id:
+            issue = db.session.query(Issue).filter_by(id=self.id).first() or False
+        elif self.name:
+            issue = db.session.query(Issue).filter_by(filepath=self.filepath).first() or False
+        return issue
+
     def issue_commit(self):
         try:
             db.session.commit()
@@ -103,6 +112,19 @@ class Issue(Base):
         except:
             db.session.rollback()
             raise
+
+
+    def process_issue_by_id(issue):
+        #issue = issues_get_by_issueid(issue_id)
+        extracted = extractname(issue.filename)
+        series_name = extracted[0]
+        issue.number = extracted[1]
+        issue.date = extracted[2]
+        series = Series(series_name = series_name, force = False)
+        issue.series = series.id
+        #issue_update_by_id(issue, number = number, date = date, series_id = series.id)
+        #issue_update_by_id(issue)
+        #return series_name, number, date
 
     def issue_update_or_create(self):
         issue = db.session.query(Issue).filter_by(id=self.id).first() or False

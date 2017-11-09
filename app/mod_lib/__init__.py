@@ -41,23 +41,13 @@ def scan_library_path():
         issue=Issue(filename=filename, filepath=filepath, commit=False)
         issue.issue_find_id()
         issue.issue_update_or_create()
-        issue.issue_commit()
-        #process_issue_by_id(issue.id)
+        process_series_by_issue_id(issue)
+
+    issue.issue_commit()
     return comicfilelist
 
-def process_issue_by_id(issue_id):
-    issue = issues_get_by_issueid(issue_id)
-    extracted = extractname(issue.filename)
-    series_name = extracted[0]
-    number = extracted[1]
-    date = extracted[2]
-    series = series_match_or_save(series_name, False)
-    issue_update_by_id(issue, number = number, date = date, series_id = series.id)
-    #issue_update_by_id(issue)
-    #return series_name, number, date
-
-def process_series_by_issue_id(issue_id, force):
-    issue = issues_get_by_issueid(issue_id)
+def process_series_by_issue_id(issue, force=False):
+    #issue = issues_get_by_issueid(issue_id)
     extracted = extractname(issue.filename)
     series_name = remove_special_characters(extracted[0])
     series = series_match_or_save(series_name, force)

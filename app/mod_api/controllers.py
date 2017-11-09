@@ -1,4 +1,4 @@
-# Import flask dependencies
+    # Import flask dependencies
 #from flask import Flask, Blueprint, request, render_template, flash, g, session, redirect, url_for
 #from plim import preprocessor
 from flask import Blueprint, request, jsonify, send_file, abort
@@ -101,7 +101,6 @@ def mod_issues_update_by_id(issue_id):
 #        return send_file(file)
 #    return jsonify(out)
 
-
 @mod_api.route('/series', methods=['GET', 'POST'])
 #@jwt_required
 def mod_series_list():
@@ -122,7 +121,7 @@ def mod_series_update_by_id(series_id):
 
 @mod_api.route('/process/issue/<int:issue_id>', methods=['GET', 'POST'])
 #@jwt_required
-def mod_process_issue_by_id():
+def mod_process_issue_by_id(issue_id):
     if request.method == 'GET':
         return jsonify(process_issue_by_id(issue_id))
 
@@ -140,9 +139,7 @@ def mod_process_issue_series(issue_id):
 def mod_scan_library_files():
     if request.method == 'GET':
         result = jsonify(scan_library_path())
-        print(result)
-        return result
-
+        return jsonify('done')
 
 @mod_api.route('/process/library/cv/series/cvid/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required
