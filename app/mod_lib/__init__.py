@@ -4,7 +4,7 @@ import requests
 import os
 import sys
 
-from app.models import Issue, issues_list, series_list, series_list_by_id, issues_list_by_series, get_all_issues, issues_get_by_filename, issues_get_by_issueid, series_match_or_save, issue_match_or_create, issue_update_by_id, series_update_or_create, series_get_by_seriesid, publisher_update_or_create, publisher_get_from_cvid, series_get_from_cvid, issue_update_or_create, issue_get_by_issueid
+from app.models import Issue, Publisher, issues_list, series_list, series_list_by_id, issues_list_by_series, get_all_issues, issues_get_by_filename, issues_get_by_issueid, series_match_or_save, issue_match_or_create, issue_update_by_id, series_update_or_create, series_get_by_seriesid, publisher_update_or_create, publisher_get_from_cvid, series_get_from_cvid, issue_update_or_create, issue_get_by_issueid
 from app.mod_lib.parse_names.comicimporter import MetadataImporter
 from config import SBConfig
 
@@ -39,7 +39,7 @@ def scan_library_path():
         #print(comic)
         #issue = issue_match_or_create(comic, os.path.dirname(filename))
         issue=Issue(filename=filename, filepath=filepath, commit=False)
-        issue.issue_find_id()
+        #issue.issue_find_id()
         issue.issue_update_or_create()
         process_series_by_issue_id(issue)
 
@@ -76,7 +76,7 @@ def process_cv_series_by_id(series_id):
     #importer.import_issue_details(series)
     return 'ok'
 
-def process_cv_get_series_cvid_by_id(series_id):
+def process_cv_get_series_cvid_by_id(series_id, cvid):
     series = series_get_by_seriesid(series_id)
     importer = MetadataImporter()
     series_matches = importer.find_series_matches(series)
@@ -84,12 +84,16 @@ def process_cv_get_series_cvid_by_id(series_id):
     #cvid = find_issue_id(series.id)
     return 'ok'
 
-def process_cv_get_series_details_by_id(series_id):
+def process_cv_get_series_details_by_id(series_id, cvid):
     series = series_get_by_seriesid(series_id)
+    if not series.cvid:
+        series.cvid=cvid
     importer = MetadataImporter()
     details = importer.get_series_details(series)['results']
-    publisher = publisher_get_from_cvid(details['publisher']['id'])
-    #publisher_update_or_create(pubid, name=publisher['name'])
+    print(details)
+
+    publisher=Publisher(cvid=details['publisher']['id'], name=details['publisher']['name'], commit=True)
+    publisher.update_or_create_by_cvid()
     series = series_update_or_create(series_id,
         image_small=details['image']['small_url'],
         image_large=details['image']['screen_large_url'],

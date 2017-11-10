@@ -141,17 +141,21 @@ def mod_scan_library_files():
         result = jsonify(scan_library_path())
         return jsonify('done')
 
-@mod_api.route('/process/library/cv/series/cvid/<int:series_id>', methods=['GET', 'POST'])
+#@mod_api.route('/process/library/cv/series/cvid/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required
-def mod_scan_library_cv_series(series_id):
-    if request.method == 'GET':
-        return jsonify(process_cv_get_series_cvid_by_id(series_id))
+#def mod_scan_library_cv_series(series_id):#
+    #if request.method == 'POST':
+        #return jsonify(process_cv_get_series_cvid_by_id(series_id, cvid))
+#        series = Series(cvid=cvid, id=series_id)#
+        #return jsonify(process_cv_get_issue_details_by_id(series_id, cvid))
+
 
 @mod_api.route('/process/library/cv/series/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required
 def mod_scan_library_cv_series_cvid(series_id):
+    cvid = request.args.get('cvid') if request.args.get('cvid') else None
     if request.method == 'POST':
-         process_cv_get_series_details_by_id(series_id)
+         jsonify(process_cv_get_series_details_by_id(series_id, cvid))
     return jsonify('ok')
 
 @mod_api.route('/process/library/cv/issue/<int:issue_id>', methods=['GET', 'POST'])

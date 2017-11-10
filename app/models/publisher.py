@@ -19,3 +19,26 @@ class Publisher(Base):
 
     def __str__(self):
         return self.name
+
+    def __init__(self, **kwargs):
+        self.kwargs=kwargs
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def update_or_create_by_cvid(self):
+        publisher = db.session.query(Publisher).filter_by(cvid=self.cvid).first() or False
+        #print(publisher.cvid, publisher.id, id, publisher.description)
+        if not publisher:
+            publisher = Publisher()
+        db.session.add(publisher)
+        for key, value in self.kwargs.items():
+            newvalue=str(value[0]) if isinstance(value, list) else str(value)
+            setattr(publisher, key, newvalue)
+
+        if self.commit:
+            try:
+                db.session.commit()
+                db.session.flush()
+            except:
+                db.session.rollback()
+                raise
