@@ -80,17 +80,14 @@ class Issue(Base):
         issues = db.session.query(Issue).limit(self.limit).offset(diff).all()
         #values=['name', 'description', 'id']
         #issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id])) for row in issues]
-        print(issues)
         return issues
 
     def getserieslist(self):
         issues=''
-        print(self.series_id)
         diff=int(self.limit)*int(self.page)
         issues = db.session.query(Issue).filter(Issue.series_id == self.series_id).limit(self.limit).offset(diff).all()
         #values=['name', 'description', 'id']
         #issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id])) for row in issues]
-        print(issues)
         return issues
 
     def issue_find_id(self):
@@ -127,18 +124,21 @@ class Issue(Base):
         #return series_name, number, date
 
     def update_or_create(self):
-        issue=None
         if self.id:
+            print('id exists, using that.')
             issue = db.session.query(Issue).filter_by(id=self.id).first() or False
-        elif self.name:
-            issue = db.session.query(Issue).filter_by(name=self.issue_name).first()
-        if not issue or self.force:
-            issue = Issue()
+        elif self.filepath:
+            print('filepath exists, using that.')
+            issue = db.session.query(Issue).filter_by(filepath=self.filepath).first() or False
+        if not issue:
+            issue = Issue(filepath=self.filepath)
             db.session.add(issue)
+            print('making new issue.', issue)
+        print('issue is:', issue)
         for key, value in self.kwargs.items():
             newvalue=str(value[0]) if isinstance(value, list) else str(value)
-            setattr(issue, key, newvalue)
-            print(issue, key, newvalue)
+            #print(issue, key, newvalue)
+            #setattr(issue, key, newvalue)
         try:
             db.session.commit()
             db.session.flush()

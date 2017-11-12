@@ -16,7 +16,6 @@ from app.mod_lib.parse_names.util import remove_special_characters
 from config import SBConfig
 apikey = SBConfig.get_api_key()
 libfolder = SBConfig.get_lib_path()
-print(libfolder)
 folder=""
 
 import logging
@@ -38,9 +37,10 @@ def scan_library_path():
     comicfilelist = [(os.path.basename(entry.path), entry.path) for entry in scantree(libfolder)]
 
     for filename, filepath in comicfilelist:
-        series = process_series_by_filename(filename)
-        issue=Issue(filename=filename, filepath=filepath, series_id=series.id)
+        series, extracted = process_series_by_filename(filename)
+        issue=Issue(filename=filename, filepath=filepath, series_id=series.id, number=extracted[1])
         issue=issue.update_or_create()
+        #print(filename, series, series.id, extracted)
 
     db.session.commit()
     db.session.flush()
@@ -55,7 +55,7 @@ def process_series_by_filename(filename, force=False):
     series=series.match_or_save()
     #print(series.id, series.name, type(series))
     #print(series_name, issue.name)
-    return series
+    return series, extracted
 
 #def process_library_files():
 #    comics = get_all_issues()
@@ -75,7 +75,7 @@ def process_library_cv_issue():
 
 def process_cv_series_by_id(series_id):
     series = series_get_by_seriesid(series_id)
-    print(series.cvid)
+    #print(series.cvid)
     importer = MetadataImporter()
     #importer.import_issue_details(series)
     return 'ok'
@@ -94,7 +94,7 @@ def process_cv_get_series_details_by_id(series_id, cvid):
         series.cvid=cvid
     importer = MetadataImporter()
     details = importer.get_series_details(series)['results']
-    print(details)
+    #print(details)
 
     publisher=Publisher(cvid=details['publisher']['id'], name=details['publisher']['name'], commit=True)
     publisher.update_or_create_by_cvid()
