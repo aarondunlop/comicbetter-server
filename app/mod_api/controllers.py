@@ -108,7 +108,7 @@ def mod_series_list():
     if request.method == 'GET':
         return jsonify(series.getlist())
 
-#This sets the series ID + other factors. Usually tag cvid=x in the URI.
+#This sets the series ID + other factors. Tag cvid=x in the URI.
 @mod_api.route('/series/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required
 def mod_series_update_by_id(series_id):
@@ -138,8 +138,9 @@ def mod_process_issue_series(issue_id):
 #@jwt_required
 def mod_scan_library_files():
     if request.method == 'GET':
-        result = jsonify(scan_library_path())
-        return jsonify('done')
+        result = scan_library_path()
+        return 'done'
+    return jsonify('Make sure method is GET')
 
 #@mod_api.route('/process/library/cv/series/cvid/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required
@@ -148,7 +149,6 @@ def mod_scan_library_files():
         #return jsonify(process_cv_get_series_cvid_by_id(series_id, cvid))
 #        series = Series(cvid=cvid, id=series_id)#
         #return jsonify(process_cv_get_issue_details_by_id(series_id, cvid))
-
 
 @mod_api.route('/process/library/cv/series/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required

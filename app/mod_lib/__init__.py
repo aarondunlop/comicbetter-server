@@ -4,7 +4,7 @@ import requests
 import os
 import sys
 
-from app.models import Issue, Publisher, issues_list, series_list, series_list_by_id, issues_list_by_series, get_all_issues, issues_get_by_filename, issues_get_by_issueid, series_match_or_save, issue_match_or_create, issue_update_by_id, series_update_or_create, series_get_by_seriesid, publisher_update_or_create, publisher_get_from_cvid, series_get_from_cvid, issue_update_or_create, issue_get_by_issueid
+from app.models import Issue, Publisher, Series, issues_list, series_list, series_list_by_id, issues_list_by_series, get_all_issues, issues_get_by_filename, issues_get_by_issueid, series_match_or_save, issue_match_or_create, issue_update_by_id, series_update_or_create, series_get_by_seriesid, publisher_update_or_create, publisher_get_from_cvid, series_get_from_cvid, issue_update_or_create, issue_get_by_issueid
 from app.mod_lib.parse_names.comicimporter import MetadataImporter
 from config import SBConfig
 
@@ -36,22 +36,32 @@ def scan_library_path():
     comicfilelist = [(os.path.basename(entry.path), entry.path) for entry in scantree(libfolder)]
 
     for filename, filepath in comicfilelist:
-        #print(comic)
+        print(filename)
         #issue = issue_match_or_create(comic, os.path.dirname(filename))
         issue=Issue(filename=filename, filepath=filepath, commit=False)
         #issue.issue_find_id()
-        issue.issue_update_or_create()
-        process_series_by_issue_id(issue)
+        issue = issue.issue_update_or_create()
+        series = process_series_by_issue_id(issue)
+        print(series.id)
+        print(issue.name)
+        #issue.series = series.id
+        #result = process_series_by_issue_id(issue)
+
+        #print(result)
 
     issue.issue_commit()
-    return comicfilelist
+    return 'comicfilelist'
 
 def process_series_by_issue_id(issue, force=False):
     #issue = issues_get_by_issueid(issue_id)
     extracted = extractname(issue.filename)
     series_name = remove_special_characters(extracted[0])
     series = series_match_or_save(series_name, force)
-    return str(series)
+    series = Series(series_name=series_name, force=False)
+    series=series.match_or_save()
+    #print(series.id, series.name, type(series))
+    #print(series_name, issue.name)
+    return series
 
 #def process_library_files():
 #    comics = get_all_issues()

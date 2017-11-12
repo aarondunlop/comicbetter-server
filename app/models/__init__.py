@@ -69,7 +69,6 @@ def series_match_or_save(series_name, force):
         db.session.add(matching_series)
         db.session.flush()
         db.session.commit()
-    return matching_series
 
 def issue_update_by_id(issue, **kwargs):
     try:

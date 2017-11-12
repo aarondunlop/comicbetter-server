@@ -56,10 +56,10 @@ class Series(Base):
         series = db.session.query(Series).filter_by(id=self.id).first()
         return series.filepath + '/' + series.filename
 
-    def series_match_or_save(self):
+    def match_or_save(self):
         matching_series = db.session.query(Series).filter_by(name=self.series_name).first()
-        if not matching_series or force:
-            matching_series = Series(name=series_name)
+        if not matching_series or self.force:
+            matching_series = Series(name=self.series_name)
             db.session.add(matching_series)
             db.session.commit()
             db.session.flush()
