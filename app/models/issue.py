@@ -126,26 +126,27 @@ class Issue(Base):
         #issue_update_by_id(issue)
         #return series_name, number, date
 
-    def issue_update_or_create(self):
+    def update_or_create(self):
+        issue=None
         if self.id:
             issue = db.session.query(Issue).filter_by(id=self.id).first() or False
         elif self.name:
             issue = db.session.query(Issue).filter_by(name=self.issue_name).first()
-        if 'issue' not in locals():
+        if not issue or self.force:
             issue = Issue()
-        db.session.add(issue)
+            db.session.add(issue)
         for key, value in self.kwargs.items():
             newvalue=str(value[0]) if isinstance(value, list) else str(value)
             setattr(issue, key, newvalue)
-
-        if self.commit:
-            try:
-                db.session.commit()
-                db.session.flush()
-            except:
-                db.session.rollback()
-                raise
+            print(issue, key, newvalue)
+        try:
+            db.session.commit()
+            db.session.flush()
+        except:
+            db.session.rollback()
+            raise
         return issue
+
 
     def match_or_save(self):
         matching_issue = db.session.query(Issue).filter_by(name=self.issue_name).first()

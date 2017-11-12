@@ -7,7 +7,7 @@ from flask import Blueprint, request, jsonify, send_file, abort
 from app import db, app
 from app.mod_lib.extractimages import *
 from app.models import issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced, Series, Issue, User
-from app.mod_lib import scan_library_path, process_series_by_issue_id, process_cv_get_series_cvid_by_id, process_cv_get_series_details_by_id, process_cv_get_issue_details_by_id, process_cv_get_issue_covers, process_cv_get_series_covers, get_issue_covers, get_series_covers
+from app.mod_lib import scan_library_path, process_cv_get_series_cvid_by_id, process_cv_get_series_details_by_id, process_cv_get_issue_details_by_id, process_cv_get_issue_covers, process_cv_get_series_covers, get_issue_covers, get_series_covers
 from app.mod_comic import ImageGetter
 from app.mod_devices import SBDevices
 import json
