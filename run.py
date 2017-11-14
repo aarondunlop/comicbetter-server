@@ -14,4 +14,4 @@ if __name__ == '__main__':
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.DEBUG)
     log.addHandler(handler)
-    app.run(host='0.0.0.0', port=58008, debug=False)
+    app.run(host='0.0.0.0', port=58008, debug=True)

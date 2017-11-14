@@ -51,16 +51,23 @@ class ImageGetter(object):
 
     def get_issue_pages(self):
         issue = Issue(id=self.id)
-        self.filepath = issue.get_abfilepath()
+        issue = issue.find_by_id()
+        print(issue.id)
+        self.filepath=issue.filepath
+        print(self.filepath)
         self.pages = self.list_extractor()
         return sorted(self.pages)
 
     def read_page(self):
         issue = Issue(id=self.id)
-        self.filepath = issue.get_abfilepath()
+        issue = issue.find_by_id()
+        self.filepath=issue.filepath
+        print('filepath is', self.filepath)
         self.pages = self.list_extractor()
         self.pagenum = self.pagenum if self.pagenum < len(self.pages) else (len(self.pages) - 1)
         self.comicextractor()
+        result = self.readpath + sorted(self.pages)[int(self.pagenum)]
+        print(result)
         return self.readpath + sorted(self.pages)[int(self.pagenum)]
 
     def list_extractor(self):
@@ -69,24 +76,25 @@ class ImageGetter(object):
             archive = SBTar(self.filepath)
             result = archive.listpages()
         elif extension == '.cbr':
-            archive = SBRar(self.filepath)
+            archive = SBRar(filename=self.filepath)
             result = archive.listpages()
         elif extension == '.cbz':
             archive = SBZip(self.filepath)
             result = archive.listpages()
         else:
             result = ''
+            print(archive, result)
         return result
 
     def comicextractor(self):
         result = ''
         extension = os.path.splitext(self.filepath)[1]
         if extension == '.cbt':
-            self.page = SBTar(self.filepath, self.id)
+            self.page = SBTar(filename=self.filepath, id=self.id)
         elif extension == '.cbr':
-            self.page = SBRar(self.filepath, self.id)
+            self.page = SBRar(filename=self.filepath, id=self.id)
         elif extension == '.cbz':
-            self.page = SBZip(self.filepath, self.id)
+            self.page = SBZip(filename=self.filepath, id=self.id)
         try:
             result = self.check_exists(self.page)
         except:

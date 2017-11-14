@@ -90,10 +90,9 @@ class Issue(Base):
         #issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id])) for row in issues]
         return issues
 
-    def issue_find_id(self):
-        issue = db.session.query(Issue).filter_by(filepath=self.filepath).first() or False
-        if issue:
-            self.id = issue.id
+    def find_by_id(self):
+        issue = db.session.query(Issue).filter_by(id=self.id).first() or False
+        return issue
 
     def issue_find_by_path_or_id(self):
         if self.id:
@@ -125,20 +124,15 @@ class Issue(Base):
 
     def update_or_create(self):
         if self.id:
-            print('id exists, using that.')
             issue = db.session.query(Issue).filter_by(id=self.id).first() or False
         elif self.filepath:
-            print('filepath exists, using that.')
             issue = db.session.query(Issue).filter_by(filepath=self.filepath).first() or False
         if not issue:
             issue = Issue(filepath=self.filepath)
             db.session.add(issue)
-            print('making new issue.', issue)
-        print('issue is:', issue)
         for key, value in self.kwargs.items():
             newvalue=str(value[0]) if isinstance(value, list) else str(value)
-            #print(issue, key, newvalue)
-            #setattr(issue, key, newvalue)
+            setattr(issue, key, newvalue)
         try:
             db.session.commit()
             db.session.flush()

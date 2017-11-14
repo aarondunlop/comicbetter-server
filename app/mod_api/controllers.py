@@ -11,6 +11,7 @@ from app.mod_lib import scan_library_path, process_cv_get_series_cvid_by_id, pro
 from app.mod_comic import ImageGetter
 from app.mod_devices import SBDevices
 import json
+import io
 from config import SBConfig
 mod_api = Blueprint('api', __name__, url_prefix='/api')
 
@@ -237,12 +238,19 @@ def api_series_return_covers(id):
 #@jwt_required
 def mod_issue_images(id):
     if request.method == 'GET' and not request.args.get('page'):
+        print('pages not specified')
         pages = ImageGetter(id=id)
-        return jsonify(pages.get_issue_pages())
+        result = pages.get_issue_pages()
+        print(result)
+        return jsonify(result)
     if request.method == 'GET' and request.args.get('page'):
+        print('pages specified')
         page = ImageGetter(id=id, pagenum=int(request.args.get('page', 1)))
+        print(page)
         file = page.read_page()
-        return send_file(file)
+        return send_file(
+            file,
+        )
     return 'ok'
 
 @mod_api.route('/process/library/cv/issue/covers/<int:id>', methods=['GET', 'POST'])
