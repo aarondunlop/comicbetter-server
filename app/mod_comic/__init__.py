@@ -62,7 +62,7 @@ class ImageGetter(object):
         issue = Issue(id=self.id)
         issue = issue.find_by_id()
         self.filepath=issue.filepath
-        print('filepath is', self.filepath)
+        app.logger.debug('filepath is', self.filepath)
         self.pages = self.list_extractor()
         self.pagenum = self.pagenum if self.pagenum < len(self.pages) else (len(self.pages) - 1)
         self.comicextractor()
