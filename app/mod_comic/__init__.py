@@ -18,11 +18,11 @@ class ImageGetter(object):
         self.imagepath=SBConfig.get_image_path()
         for key, value in kwargs.items():
             setattr(self, key, value)
-        self.readpath=SBConfig.get_read_path() + str(self.id) + '/'
-        self.seriespath=SBConfig.get_image_path() + 'series/pages/' + str(self.id) + '/'
-        self.issuepath=SBConfig.get_image_path() + 'issues/pages/' + str(self.id) + '/'
-        self.seriescoverpath=SBConfig.get_image_path() + 'series/covers/' + str(self.id) + '/'
-        self.issuecoverpath=SBConfig.get_image_path() + 'issues/covers/' + str(self.id) + '/'
+        self.readpath=SBConfig.get_read_path() + '/' + str(self.id) + '/'
+        self.seriespath=SBConfig.get_image_path() + '/' + 'series/pages/' + str(self.id) + '/'
+        self.issuepath=SBConfig.get_image_path() + '/' + 'issues/pages/' + str(self.id) + '/'
+        self.seriescoverpath=SBConfig.get_image_path() '/' + 'series/covers/' + str(self.id) + '/'
+        self.issuecoverpath=SBConfig.get_image_path() '/' + 'issues/covers/' + str(self.id) + '/'
 
     def get_issue_cover(self):
         for root, dirs, files in os.walk(self.issuecoverpath):
