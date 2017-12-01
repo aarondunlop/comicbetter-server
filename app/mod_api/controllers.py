@@ -69,7 +69,7 @@ def mod_issue_list():
 @mod_api.route('/issue/series/<int:id>', methods=['GET', 'POST'])
 #@jwt_required
 def mod_issues_list_by_series(id):
-    issues=Issue(limit = request.args.get('limit', 5), page=request.args.get('page', 0), series_id=id)
+    issues=Issue(limit = request.args.get('limit', 2500), page=request.args.get('page', 0), series_id=id)
     if request.method == 'GET':
         values=['name', 'description', 'id']
         issuesjson = [dict(list(zip(values, [row.name, row.description if row.name and row.description else None, row.id]))) for row in issues.getserieslist()]

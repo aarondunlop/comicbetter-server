@@ -38,7 +38,7 @@ def scan_library_path():
 
     for filename, filepath in comicfilelist:
         series, extracted = process_series_by_filename(filename)
-        print(series.id)
+        print(filename, series.id)
         issue=Issue(filename=filename, filepath=filepath, series_id=series.id, number=extracted[1])
         issue=issue.update_or_create()
         #print(filename, series, series.id, extracted)
