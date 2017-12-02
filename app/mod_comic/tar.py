@@ -13,5 +13,5 @@ class SBTar(object):
         return self.fp.getnames()
 
     def extract(self):
-        outpath=SBConfig.get_read_path() + str(self.id) + '/'
+        outpath=SBConfig.get_read_path()  + '/' + str(self.id) + '/'
         self.fp.extractall(path=outpath)

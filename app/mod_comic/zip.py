@@ -13,5 +13,5 @@ class SBZip(object):
         return self.fp.namelist()
 
     def extract(self):
-        outpath=SBConfig.get_read_path() + str(self.id) + '/'
+        outpath=SBConfig.get_read_path()  + '/' + str(self.id) + '/'
         self.fp.extractall(path=outpath)
