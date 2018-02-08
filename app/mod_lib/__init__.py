@@ -81,13 +81,13 @@ def process_cv_series_by_id(series_id):
     #importer.import_issue_details(series)
     return 'ok'
 
-def process_cv_get_series_cvid_by_id(series_id, cvid):
+def process_cv_get_series_cvid_by_id(series_id):
     series = series_get_by_seriesid(series_id)
     importer = MetadataImporter()
     series_matches = importer.find_series_matches(series)
-    importer.import_issue_details(series)
+    #importer.import_issue_details(series)
     #cvid = find_issue_id(series.id)
-    return 'ok'
+    return series_matches
 
 def process_cv_get_series_details_by_id(series_id, cvid):
     series = series_get_by_seriesid(series_id)

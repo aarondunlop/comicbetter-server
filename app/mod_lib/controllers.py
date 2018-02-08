@@ -155,6 +155,7 @@ def mod_lib_parse_scan():
 def mod_lib_get_covers(id):
     if request.args.get('url'):
         print(request.args.get('url'))
+        
     if request.method == 'GET':
         issue = db.session.query(Issue).filter_by(id=id).first()
         importer = MetadataImporter()

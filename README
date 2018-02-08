@@ -1,1 +1,1 @@
-This is the base server for the ComicBetter comic reader. This is entirely API driven. The mobile app interface is on the Google Play store and the UI app is a separate project. This can be used without any front-end if desired, but you will find yourself doing lots of api configs.
+This is the base server for the ComicBetter comic reader. This is entirely API driven. The mobile reader (with minimal management options) will be on the Google Play store and a management UI or app will be available at a later date.

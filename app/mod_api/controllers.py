@@ -13,6 +13,7 @@ from app.mod_devices import SBDevices
 import json
 import io
 from config import SBConfig
+
 mod_api = Blueprint('api', __name__, url_prefix='/api')
 
 #JWT stuff
@@ -150,6 +151,13 @@ def mod_scan_library_files():
         #return jsonify(process_cv_get_series_cvid_by_id(series_id, cvid))
 #        series = Series(cvid=cvid, id=series_id)#
         #return jsonify(process_cv_get_issue_details_by_id(series_id, cvid))
+
+@mod_api.route('/process/library/cv/identify/series/<int:series_id>', methods=['GET', 'POST'])
+def mod_scan_library_cv_identify_series(series_id):
+    if request.method == 'POST':
+        response = jsonify(process_cv_get_series_cvid_by_id(series_id))
+        print(response)
+        return response
 
 @mod_api.route('/process/library/cv/series/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required
