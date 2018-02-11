@@ -19,7 +19,18 @@ import json
 
 from .series import Series
 
-class Issue(Base):
+from sqlalchemy.inspection import inspect
+
+class Serializer(object):
+
+    def serialize(self):
+        return {c: getattr(self, c) for c in inspect(self).attrs.keys()}
+
+    @staticmethod
+    def serialize_list(l):
+        return [m.serialize() for m in l]
+
+class Issue(Base, Serializer):
     __tablename__ = 'issue'
     #series = relationship("Series", secondary=issueseries,back_populates="issues")
     series_id = Column(Integer, ForeignKey('series.id'))
@@ -60,6 +71,14 @@ class Issue(Base):
         self.kwargs=kwargs
         for key, value in kwargs.items():
             setattr(self, key, value)
+
+    def serialize(self):
+        d = Serializer.serialize(self)
+        return d
+
+    @staticmethod
+    def serialize_list(l):
+        return [m.serialize() for m in l]
 
     def get_file(self):
         issue = db.session.query(Issue).filter_by(id=self.id).first()
@@ -108,7 +127,6 @@ class Issue(Base):
         except:
             db.session.rollback()
             raise
-
 
     def process_issue_by_id(issue):
         #issue = issues_get_by_issueid(issue_id)

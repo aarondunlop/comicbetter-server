@@ -27,7 +27,6 @@ class Publisher(Base):
 
     def update_or_create_by_cvid(self):
         publisher = db.session.query(Publisher).filter_by(cvid=self.cvid).first() or False
-        #print(publisher.cvid, publisher.id, id, publisher.description)
         if not publisher:
             publisher = Publisher()
         db.session.add(publisher)

@@ -4,6 +4,8 @@ import requests
 import os
 import sys
 
+from PIL import Image
+
 from app import db
 
 from app.models import Issue, Publisher, Series, issues_list, series_list, series_list_by_id, issues_list_by_series, get_all_issues, issues_get_by_filename, issues_get_by_issueid, series_match_or_save, issue_match_or_create, issue_update_by_id, series_update_or_create, series_get_by_seriesid, publisher_update_or_create, publisher_get_from_cvid, series_get_from_cvid, issue_update_or_create, issue_get_by_issueid
@@ -23,6 +25,117 @@ from os import scandir, walk
 
 logger = logging.getLogger(__name__)
 
+class CBFile(object):
+    #This seems overkill, but want to add child/parent classes, unit testing, abstract MIME detection, etc.
+    #May remove after fleshing API out.
+    def __init__(self, **kwargs):
+        self.source_path=''
+        self.dest_base=''
+        self.dest_path=''
+        self.dest_name=''
+        self.source_size=''
+        self.imagepath=SBConfig.get_image_path()
+        self.filetype=''
+        self.id = ''
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.readpath=SBConfig.get_read_path() + '/' + str(self.id) + '/'
+        self.seriespath=SBConfig.get_image_path() + '/' + 'series/pages/' + str(self.id) + '/'
+        self.issuepath=SBConfig.get_image_path() + '/' + 'issues/pages/' + str(self.id) + '/'
+        self.seriescoverpath=SBConfig.get_image_path() + '/' + 'series/covers/' + str(self.id) + '/'
+        self.issuecoverpath=SBConfig.get_image_path() + '/' + 'issues/covers/' + str(self.id) + '/'
+
+    def get_image_path_by_size(self):
+        basepath = (os.path.splitext(self.dest_path)[0] + '_' + self.size + os.path.splitext(self.dest_path)[1])
+
+    def get_size_array(self): #This creates JSON with all the possible file sizes. Do we need this? It's not used now.
+        sizes=['small','large','medium','icon','tiny','thumb','super']
+        covers=[{'size': size, 'path': self.dest_path + '/' + size} for size in sizes]
+
+    def verify_file_present(self):
+        size = self.get_image_path_by_size()
+        return os.path.isfile(self.dest_path)
+
+    def get_image_type(self):
+        try:
+            with Image.open(self.source_path) as im:
+                self.filetype = im.format
+        except IOError as e:
+            print(e)
+            pass
+
+    def get_image_size(self):
+        try:
+            with Image.open(self.source_path) as im:
+                self.source_size = im.size
+        except IOError as e:
+            print(e)
+            pass
+
+    def move_cover(self):
+        self.make_dest_path()
+        self.get_image_type()
+
+        #Move this
+        self.dest_path = (self.dest_base + '.' + self.filetype).lower()
+        self.link_cover()
+        return self.dest_path
+
+    def link_cover(self):
+        try:
+            if not os.path.isfile(self.dest_path):
+                os.link(self.source_path, self.dest_path)
+        except IOError as e:
+            print(e)
+            pass
+
+    def make_dest_path(self):
+        if not os.path.exists(self.issuecoverpath):
+            try:
+                os.makedirs(self.issuecoverpath)
+            except:
+                raise
+
+    def make_source_path(self):
+        if not os.path.exists(self.issuecoverpath):
+            try:
+                os.makedirs(self.issuecoverpath)
+            except:
+                raise
+
+class CVFetch(object):
+    def __init__(self, **kwargs):
+        self.filepath=''
+        self.pages=[]
+        self.size=''
+        self.covername=''
+        self.issue=''
+        self.covers=''
+        self.imagepath=SBConfig.get_image_path()
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.readpath=SBConfig.get_read_path() + '/' + str(self.id) + '/'
+        self.seriespath=SBConfig.get_image_path() + '/' + 'series/pages/' + str(self.id) + '/'
+        self.issuepath=SBConfig.get_image_path() + '/' + 'issues/pages/' + str(self.id) + '/'
+        self.seriescoverpath=SBConfig.get_image_path() + '/' + 'series/covers/' + str(self.id) + '/'
+        self.issuecoverpath=SBConfig.get_image_path() + '/' + 'issues/covers/' + str(self.id) + '/'
+
+    def make_path():
+        if not os.path.exists(self.issuecoverpath):
+            try:
+                os.makedirs(self.issuecoverpath)
+            except:
+                raise
+
+    def download_file(url, filename, force=False):
+        headers = {'User-Agent': 'SomethingBetter v0.1.1'}
+        i = requests.get(url, headers=headers)
+        self.make_path()
+        with open(filename, 'wb') as f:
+            f.write(i.content)
+
+
+
 def scantree(path):
     extensions = ['.jpeg', '.jpg', '.cbr', '.cbt', '.cbz']
     for entry in os.scandir(path):
@@ -38,10 +151,8 @@ def scan_library_path():
 
     for filename, filepath in comicfilelist:
         series, extracted = process_series_by_filename(filename)
-        print(filename, series.id)
         issue=Issue(filename=filename, filepath=filepath, series_id=series.id, number=extracted[1])
         issue=issue.update_or_create()
-        #print(filename, series, series.id, extracted)
 
     db.session.commit()
     db.session.flush()
@@ -54,8 +165,6 @@ def process_series_by_filename(filename, force=False):
     #series = series_match_or_save(series_name, force)
     series = Series(series_name=series_name, force=False)
     series=series.match_or_save()
-    #print(series.id, series.name, type(series))
-    #print(series_name, issue.name)
     return series, extracted
 
 #def process_library_files():
@@ -76,7 +185,6 @@ def process_library_cv_issue():
 
 def process_cv_series_by_id(series_id):
     series = series_get_by_seriesid(series_id)
-    #print(series.cvid)
     importer = MetadataImporter()
     #importer.import_issue_details(series)
     return 'ok'
@@ -95,7 +203,6 @@ def process_cv_get_series_details_by_id(series_id, cvid):
         series.cvid=cvid
     importer = MetadataImporter()
     details = importer.get_series_details(series)['results']
-    #print(details)
 
     publisher=Publisher(cvid=details['publisher']['id'], name=details['publisher']['name'], commit=True)
     publisher.update_or_create_by_cvid()
@@ -139,9 +246,7 @@ def process_cv_get_issue_details_by_id(issue_id):
 def process_cv_get_issue_covers(id, force=False):
     issue=issue_get_by_issueid(id)
     covers=get_issue_covers(id)
-    print(('issue', issue, 'covers', covers, 'force', force))
     make_covers_local(issue, covers, force)
-    print(('issue', issue, 'covers', covers, 'force', force))
     #return covers
     return 'ok'
 
@@ -155,21 +260,6 @@ def get_series_covers(id):
     seriespath=SBConfig.get_image_path() + 'series/covers/' + str(id)
     sizes=['small','large','medium','icon','tiny','thumb','super']
     covers=[{'size': size, 'path': seriespath + '/' + size + '.jpg'} for size in sizes]
-    return covers
-
-def get_issue_covers(id):
-    issuepath=SBConfig.get_image_path() + 'issues/covers/' + str(id)
-    sizes=['small','large','medium','icon','tiny','thumb','super']
-    covers=[{'size': size, 'path': issuepath + '/' + size + '.jpg'} for size in sizes]
-    return covers
-
-def make_covers_local(record, covers, force=False):
-    print(record)
-    for img in covers:
-        print(img)
-        if img['size'] == 'small' or img['size'] == 'thumb':
-            download_file(getattr(record, 'image_' + img['size']), img['path'], force)
-            print(img)
     return covers
 
 def download_file(url, filename, force=False):

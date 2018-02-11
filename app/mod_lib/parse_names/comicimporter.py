@@ -56,7 +56,6 @@ class MetadataImporter(object):
         query_params = self.base_params
         query_params['field_list'] = 'image,description' #self.query_series_fields
         query_response = self._query_cv((self.baseurl + 'issue/4000-' + str(comic.cvid)), query_params)
-        #print query_response['results']
         #comic.cover=query_response['results']['image']['thumb_url']
         #comic.desc=query_response['results']['description']
         #db.session.commit()

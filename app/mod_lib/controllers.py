@@ -40,7 +40,6 @@ mod_lib = Blueprint('lib', __name__, url_prefix='/lib')
 @mod_lib.route('/comic/info/<int:id>', methods=['GET', 'POST'])
 def comicinfo(id):
     comicquery = db.session.query(Issue).filter_by(id=id).first()
-    print(comicquery)
     return render_template('lib/info.mako', issue=comicquery, app_name=app.config['SITE_NAME'])
 
 # Set the route and accepted methods
@@ -52,17 +51,13 @@ def comiclist():
     #Create JSON object for ui grid
     #comics=([('cover', row.cover), ('name', row.name), ('issue', row.), ('path', row.path) for row in issues])
     comics = json.dumps([dict(list(zip(values, [row.cover, row.name, row.number, row.filepath, row.series.name if row.series and row.series.name else None, row.id]))) for row in issues])
-    print(comics)
 
     #comics = json.dumps([dict(zip(values, row)) for row in issues])
-    #print comics
     if request.method == 'GET':
         values=['name']
         #resultset = [dict(zip(values, row)) for row in comics]
         resultset=[]
-        #print json.dumps([{'name': k, 'size': v} for  in comic for comic in comics], indent=4)
     #for comic in issues:
-        #print(comic)
         #importer = MetadataImporter()
         #comicdict=extractname(str(comic.name))
         #importer.import_comic_files(comic.name, issue_series, issue_number, issue_year)
@@ -92,8 +87,7 @@ def mod_lib_issue_cvid():
         #return render_template('lib/scan.mako', app_name=app.config['SITE_NAME'])
         #return redirect(url_for('lib.comiclist'))
         #return redirect(url_for('lib.comicnames'))
-    if request.method == 'POST':
-        print(ids)
+    #if request.method == 'POST':
     return redirect(url_for('lib.comiclist'))
 
 # Given an ID passed as a param, scrapes the CV API and presents most likely hits. User clicks to select, pops the current id param, and re-iterates.
@@ -104,7 +98,6 @@ def mod_lib_get_series_id():
         id = request.args.get('issueid').split(",")
         id = id.pop(0)
         importer = MetadataImporter()
-        print(id)
     if request.args.get('cvid'):
         series_cvid = request.args.get('cvid')
     result=''
@@ -116,9 +109,7 @@ def mod_lib_get_series_id():
         #return redirect(url_for('lib.comiclist'))
         #return redirect(url_for('lib.comicnames'))
     if request.method == 'POST':
-        print(series_cvid, id)
         #result = importer.set_series_cvid(id, series_cvid)
-        print(result)
         #return redirect(url_for('lib.comiclist'))
     #return render_template('lib/seriesmatch.mako', comics=result, id=id, app_name=app.config['SITE_NAME'])
     #return render_template('lib/seriesmatch.mako', comics=result, id=id, app_name=app.config['SITE_NAME'])
@@ -135,7 +126,6 @@ def mod_lib_parse_basic():
 
     if request.method == 'GET' and ids:
         for id in ids:
-            print(id)
             importer.import_comic_records(id, 'basic')
     return redirect(url_for('lib.comiclist'))
 
@@ -153,23 +143,16 @@ def mod_lib_parse_scan():
 # Set the route and accepted methods
 @mod_lib.route('/image/cover/<int:id>', methods=['GET', 'POST'])
 def mod_lib_get_covers(id):
-    if request.args.get('url'):
-        print(request.args.get('url'))
+    #if request.args.get('url'):
         
     if request.method == 'GET':
         issue = db.session.query(Issue).filter_by(id=id).first()
         importer = MetadataImporter()
-        print(importer)
-        print(issue.id)
-        print(id)
         importer.import_issue_covers(issue)
-        print(importer)
         #icon_url, medium_url, tiny_url,small_url, thumb_url,screen_url,super_url
-        #print comic.cover
 
     #elif request.method == 'POST':
     #    issue = db.session.query(Issue).filter_by(id=id).first()
-    #    print issue.cover
 
     #return render_template('lib/image.mako', issue=issue, app_name=app.config['SITE_NAME'])
     return redirect(url_for('lib.comiclist'))
@@ -179,10 +162,8 @@ def mod_lib_get_covers(id):
 def mod_lib_cvscan():
     comics = db.session.query(Issue)
     #comics = db.session.query(Issue).all()
-    print(comics)
     #folders = db.session.query(LibraryFolders).all()
     for comic in comics:
-        #print comic.series.name
         importer = MetadataImporter()
         importer.import_comic_files(comic, 'cv')
     return render_template('lib/scan.mako', app_name=app.config['SITE_NAME'])
@@ -198,9 +179,7 @@ def mod_lib_match():
     if form.query.data and form.filepath.data:
         match = matchcomics(query=form.query.data, filepath=form.filepath.data)
         matches=[ (i, match[0][i]) for i, x in enumerate(match[0])]
-        #print(matches)
     matches.insert(0,(0, 'None'))
-    #print(matches)
     form.series.choices = matches
     form.year.choices = matches
     form.issue.choices = matches

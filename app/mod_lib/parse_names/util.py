@@ -40,7 +40,6 @@ def scancomics(folder):
             new_comic = Issue(filepath=filename, filename=comic)
             db.session.add(new_comic)
             db.session.commit()
-        #print(comic,filename)
 
 def matchcomics(query, filepath):
   match = re.findall(query, filepath, flags=0)

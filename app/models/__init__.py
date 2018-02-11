@@ -130,12 +130,10 @@ def issue_get_by_issueid(issue_id):
 
 def issue_update_or_create(id=None, **kwargs):
     issue = db.session.query(Issue).filter_by(id=id).first() or False
-    #print(issue.cvid, issue.id, id, issue.description)
     if not issue:
         issue = Issue(id=id, **kwargs)
     for key, value in kwargs.items():
         setattr(issue, key, value)
-        #print(key, value, issue.description)
     db.session.commit()
     db.session.flush()
 

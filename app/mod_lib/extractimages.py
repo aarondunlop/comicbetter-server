@@ -8,7 +8,8 @@ import patoolib
 from app import app
 
 from app.mod_lib.parse_names import *
-from app.models.main import *
+#from app.models.main import *
+from app.models.issue import Issue
 import logging
 
 logger = logging.getLogger(__name__)
@@ -16,16 +17,15 @@ logger = logging.getLogger(__name__)
 class ComicImageExtracter(object):
 
     def __init__(self, id):
-        comic = db.session.query(Issue).filter_by(id=id).first()
+        comic = Issue(id=id).find_by_id()
+
         self.path = comic.filepath
         self.name = comic.filename
         self.id = id
 
     def find_series_matches(self, id):
-        print('got here.')
         #This is part two, we need to have a series ID first, so find_series_name needs to be run.
         seriesid = db.session.query(Issue.series_id).filter_by(id=id).first()
-        print(seriesid)
         #query_params = self.base_params
         #query_params['resources'] = 'volume'
         #query_params['field_list'] = 'id,name,start_year,api_detail_url,description' #self.query_series_fields
@@ -59,7 +59,6 @@ class ComicImageExtracter(object):
 
         # Create temp file if not found.
         #if not os.path.isfile(tempfile):
-            #print(filename, tempfile, temppath)
             #copyfile(filename, tempfile)
             #os.chmod(tempfile, 0o777)
 
@@ -85,12 +84,13 @@ class ComicImageExtracter(object):
 
     #==================================================================================================
 
-    def extract_cover(self,file):
+    def extract_cover(self):
         '''
         Extract the cover image from a comic file.
 
         Returns a path to the cover image.
         '''
+        file = self.path
         filename = os.path.basename(file)
         ext = os.path.splitext(filename)[1].lower()
         mediaroot = settings.MEDIA_ROOT + '/images/'

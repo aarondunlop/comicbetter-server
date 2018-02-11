@@ -53,7 +53,6 @@ def extract( name_s ):
        name_s = match.group(1) + " " + match.group(2)
        #log.debug("     -> ", name_s)
 
-    #print match
 
     # try the extraction.  if anything goes wrong, or if we come up with a blank
     # series name, revert to the filename (without extension) as series name

@@ -26,17 +26,19 @@ db = SQLAlchemy(app)
 
 @app.before_request
 def log_request_info():
-    app.logger.debug('Request Headers: %s', request.headers)
-    app.logger.debug('Request Method: %s', request.method)
-    app.logger.debug('Request Body: %s', request.get_data())
-    app.logger.debug('Request: %s', request)
+    #app.logger.debug('Request Headers: %s', request.headers)
+    #app.logger.debug('Request Method: %s', request.method)
+    #app.logger.debug('Request Body: %s', request.get_data())
+    #app.logger.debug('Request: %s', request)
+    #return request
+    if False is True:
 
 @app.after_request
 def log_response_info(response):
-    app.logger.debug('Response Headers: %s', response.headers)
+    #app.logger.debug('Response Headers: %s', response.headers)
     #app.logger.debug('Response Body: %s', response.data.decode('utf-8'))
-    app.logger.debug('Response Status: %s', response.status)
-    app.logger.debug('Response: %s', response)
+    #app.logger.debug('Response Status: %s', response.status)
+    #app.logger.debug('Response: %s', response)
     return response
 
 @app.errorhandler(500)

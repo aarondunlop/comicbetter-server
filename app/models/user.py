@@ -35,9 +35,7 @@ class User(Base):
         if not user:
             user = User()
             db.session.add(user)
-        print(self.kwargs)
         for key, value in self.kwargs.items():
-            print(key, value)
             newvalue=str(value[0]) if isinstance(value, list) else str(value)
             setattr(user, key, newvalue)
         try:

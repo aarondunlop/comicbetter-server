@@ -15,7 +15,4 @@ class SBDevices(object):
         return self.id
 
     def synced(self, device):
-        for k in self.kwargs:
-            print(k)
-        print(device)
         return 'ok'

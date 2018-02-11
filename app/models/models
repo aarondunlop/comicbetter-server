@@ -229,8 +229,10 @@ class Issue(Base):
         comicfilehandler = ComicFileHandler()
         comic = comicfilehandler.extract_comic(self.file, self.id)
 
+    def get_cover(self):
+      comic = comicfilehandler.extract_cover(self.file, self.id)
+
 class Settings(Base):
     api_key = Column(db.String(40))
     def __str__(self):
         return "Settings"
-
