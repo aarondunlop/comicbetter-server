@@ -3,6 +3,7 @@ import json
 import requests
 import os
 import sys
+from pathlib import Path, PurePosixPath
 
 from PIL import Image
 
@@ -72,27 +73,36 @@ class CBFile(object):
             print(e)
             pass
 
+    def resize_image(self):
+        print(self.source_path)
+        #self.make_dest_path()
+        #self.get_image_type()
+        #print(self.filetype)
+        #Move this
+        #self.dest_path = (self.dest_base + '.' + self.filetype).lower()
+        #self.link_cover()
+        #return self.dest_path
+
     def move_cover(self):
         self.make_dest_path()
-        self.get_image_type()
-
-        #Move this
-        self.dest_path = (self.dest_base + '.' + self.filetype).lower()
-        self.link_cover()
-        return self.dest_path
+        result = self.link_cover()
+        return result
 
     def link_cover(self):
+        dest_file = (self.dest_path + PurePosixPath(self.source_path).name)
         try:
-            if not os.path.isfile(self.dest_path):
-                os.link(self.source_path, self.dest_path)
+            if not os.path.isfile(dest_file):
+                os.link(self.source_path, dest_file)
+                return dest_file
         except IOError as e:
             print(e)
             pass
 
     def make_dest_path(self):
-        if not os.path.exists(self.issuecoverpath):
+        #print('making dir at ' + self.dest_path)
+        if not os.path.exists(self.dest_path):
             try:
-                os.makedirs(self.issuecoverpath)
+                os.makedirs(self.dest_path)
             except:
                 raise
 

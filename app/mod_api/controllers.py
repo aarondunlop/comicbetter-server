@@ -116,9 +116,12 @@ def api_issue_return_covers(id):
     elif request.method == 'GET' and coverlist is None and imagesize is not None: #Return actual cover, in requested size.
         covers = ImageGetter(id=id, size=imagesize, issue=issue, imagetype='ImageGetterissue')
         file = covers.get_cover()
-        return send_file(
-            file,
-        )
+        try:
+            return send_file(
+                file,
+            )
+        except:
+            return jsonify('ok')
 
 @mod_api.route('/issue/image/<int:id>', methods=['GET', 'POST'])
 #@jwt_required
@@ -130,9 +133,12 @@ def mod_issue_images(id):
     if request.method == 'GET' and request.args.get('page'):
         page = ImageGetter(id=id, pagenum=int(request.args.get('page', 1)))
         file = page.read_page()
-        return send_file(
-            file,
-        )
+        try:
+            return send_file(
+                file,
+            )
+        except:
+            return jsonify('ok')
     return 'ok'
 
 ##@jwt_required

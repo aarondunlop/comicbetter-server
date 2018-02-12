@@ -24,14 +24,14 @@ db = SQLAlchemy(app)
 #Session = sessionmaker(bind=engine)
 #session = Session()
 
-@app.before_request
-def log_request_info():
+#@app.before_request
+#def log_request_info():
     #app.logger.debug('Request Headers: %s', request.headers)
     #app.logger.debug('Request Method: %s', request.method)
     #app.logger.debug('Request Body: %s', request.get_data())
     #app.logger.debug('Request: %s', request)
     #return request
-    if False is True:
+    #if False is True:
 
 @app.after_request
 def log_response_info(response):
