@@ -27,3 +27,26 @@ firebase:
 
 jwt:
   secret:
+
+image_formats:
+  icon:
+    width: 25
+    height: 25
+  thumb:
+    width: 50
+    height: 50
+  tiny:
+    width: 100
+    height: 100
+  small:
+    width: 150
+    height: 150
+  medium:
+    width: 300
+    height: 300
+  large:
+    width: 450
+    height: 450
+  super:
+    width: 2000
+    height: 2000

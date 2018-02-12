@@ -38,6 +38,7 @@ class CBFile(object):
         self.imagepath=SBConfig.get_image_path()
         self.filetype=''
         self.id = ''
+        self.image_sizes=SBConfig.get_image_sizes()
         for key, value in kwargs.items():
             setattr(self, key, value)
         self.readpath=SBConfig.get_read_path() + '/' + str(self.id) + '/'
@@ -73,33 +74,45 @@ class CBFile(object):
             print(e)
             pass
 
-    def resize_image(self):
-        print(self.source_path)
-        #self.make_dest_path()
-        #self.get_image_type()
-        #print(self.filetype)
-        #Move this
-        #self.dest_path = (self.dest_base + '.' + self.filetype).lower()
-        #self.link_cover()
-        #return self.dest_path
-
-    def move_cover(self):
+    def copy_and_resize(self):
+        dest_filename = self.get_resized_filename()
+        dimensions=(self.image_sizes[self.size]['width'], self.image_sizes[self.size]['height'])
+        print(self.image_sizes[self.size])
+        #size =
+        print('at copy and resize. source: ' + str(self.source_path) + 'dest: '+ self.dest_path)
         self.make_dest_path()
-        result = self.link_cover()
+        try:
+            im = Image.open(self.source_path)
+            im.thumbnail(dimensions, Image.ANTIALIAS)
+            im.save(dest_filename, "JPEG")
+            return dest_filename
+        except IOError:
+            print('cannot create thumbnail for ' + infile)
+
+
+    def get_resized_filename(self):
+        fileext = PurePosixPath(self.source_path).suffix
+        filename = (str(PurePosixPath(self.source_path).stem) + '_' + str(self.size))
+        dest_file = self.dest_path + filename + fileext
+        return dest_file
+
+    def move_image(self):
+        self.make_dest_path()
+        result = self.link_image()
         return result
 
-    def link_cover(self):
+    def link_image(self):
         dest_file = (self.dest_path + PurePosixPath(self.source_path).name)
         try:
             if not os.path.isfile(dest_file):
                 os.link(self.source_path, dest_file)
-                return dest_file
+            return dest_file
+
         except IOError as e:
             print(e)
             pass
 
     def make_dest_path(self):
-        #print('making dir at ' + self.dest_path)
         if not os.path.exists(self.dest_path):
             try:
                 os.makedirs(self.dest_path)

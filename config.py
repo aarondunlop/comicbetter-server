@@ -63,6 +63,11 @@ class SBConfig(object):
         return SBConfig.cfg()['comicvine']['apikey']
 
     @staticmethod
+    def get_image_sizes():
+        image_formats = SBConfig.cfg()['image_formats']
+        return image_formats
+
+    @staticmethod
     def update_cfg(confdict):
         try:
             with open("config.yml", 'w') as outfile:

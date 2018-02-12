@@ -29,7 +29,6 @@ class SBTar(object):
                 continue
             else:
                 outputpath = (outpath + PurePosixPath(file.filename).name)
-                print(outputpath)
                 try:
                     with self.fp.open(file) as temp, open(outputpath, 'wb') as f:
                         shutil.copyfileobj(temp, f)

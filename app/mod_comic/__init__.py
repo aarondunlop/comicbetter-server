@@ -41,24 +41,22 @@ class ImageGetter(object):
     def get_cover(self):
         #Flow - check if cover exists in DB. If so, check if file still exists. If so, return it. If not, extract
         #Comic page 1(0) and return that.
-        if self.issue.cover:
-            verify_cover = CBFile(dest_path=self.issue.cover, id=self.id, size=self.size)
+        converted_size = ('image_' + str(self.size))
+        sized_cover = getattr(self.issue, converted_size)
+        if sized_cover: #Ensure everything exists before final checks.
+            verify_cover = CBFile(dest_path=sized_cover, id=self.id, size=self.size)
             verify_cover_exists = verify_cover.verify_file_present()
-            #verify_cover.make_dest_path()
-
-        if self.issue.cover is not None and verify_cover_exists is True:
-            filepath = self.issue.cover
+        if sized_cover is not None and verify_cover_exists is True:
+            filepath = sized_cover
             return filepath
-        elif self.issue.cover is None or verify_cover_exists is False:
-            print('trying to get cover. Exists ' + str(verify_cover_exists))
-            filepath = self.extract_issue_cover()
-            print(filepath)
-            #Todo, only store the relative path here. Save that only.
-            #self.covername='page1'
-            #self.full_cover_name =
-            self.issue.cover = '/tmp/blah'
-            self.issue.issue_commit()
-            return filepath
+        elif sized_cover is None or verify_cover_exists is False:
+                filepath = self.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
+                resized_cover = CBFile(source_path=filepath, dest_path=self.issuecoverpath, size=self.size)
+                resized_cover.get_resized_filename() #just getting filename.
+                thumbnail = resized_cover.copy_and_resize() #Saving file.
+                setattr(self.issue, converted_size, thumbnail) #Saves to the correct cover attribute.
+                self.issue.issue_commit()
+                return thumbnail
 
     def make_covers_local(self):
         for img in self.covers:
@@ -78,9 +76,9 @@ class ImageGetter(object):
         #Gets the first comic page from file.
         self.pagenum = 0 #The API may start at 1 but pagenum starts at 0. Careful.
         source = self.read_page() #Grabs the first file/page.
-        dest_base=(self.issuecoverpath) #Using page0 to denote that the cover is extracted.
+        #dest_base=(self.issuecoverpath) #Using page0 to denote that the cover is extracted.
         cbmover = CBFile(source_path=source, issue=self.issue, dest_path=self.issuecoverpath, id=self.id, size=self.size)
-        result = cbmover.move_cover()
+        result = cbmover.move_image()
         return result
 
     def fetch_series_cover(self):
@@ -117,13 +115,11 @@ class ImageGetter(object):
         CBFile(dest_path=self.readpath).make_dest_path() #Make sure dir exists.
         issue = Issue(id=self.id).find_by_id()
         self.filepath=issue.filepath
-        #print(self.filepath)
         #app.logger.debug('filepath is', self.filepath)
         self.pages = self.list_extractor()
         self.pagenum = self.pagenum if self.pagenum < len(self.pages) else (len(self.pages) - 1)
         self.comicextractor()
         result = self.readpath + sorted(self.pages)[int(self.pagenum)]
-        #print('read_page result is' + result)
         return self.readpath + sorted(self.pages)[int(self.pagenum)]
 
     def list_extractor(self):

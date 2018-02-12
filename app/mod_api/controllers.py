@@ -108,6 +108,8 @@ def mod_issues_list_by_series(id):
 def api_issue_return_covers(id):
     issue=Issue(id=id).find_by_id()
     imagesize = request.args.get('size')
+    if imagesize not in SBConfig.get_image_sizes():
+        return jsonify("Please provide a valid size. Options are: " + str(SBConfig.get_image_sizes()))
     coverlist = request.args.get('list')
     issuepath=SBConfig.get_image_path() + 'issues/covers/' + str(id)
 
