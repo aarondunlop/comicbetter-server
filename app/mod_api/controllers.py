@@ -3,7 +3,7 @@ from flask import Blueprint, g, request, jsonify, send_file, abort
 # Import the database object from the main app module
 from app import app
 from app.mod_lib.extractimages import ComicImageExtracter
-from app.models import issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced, Series, Issue, User
+from app.models import Series, Issue, User # issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced, 
 from app.models.database import db_session
 from app.mod_lib import CBFile, scan_library_path, process_cv_get_series_cvid_by_id, process_cv_get_series_details_by_id, process_cv_get_issue_details_by_id, process_cv_get_issue_covers, process_cv_get_series_covers, get_series_covers
 from app.mod_comic import ImageGetter
@@ -182,9 +182,6 @@ def mod_scan_library_cv_identify_series(series_id):
 def mod_issue_list():
     if request.method == 'GET':
         return jsonify(issues_list())
-
-
-
 
 @mod_api.route('/issue/<int:issue_id>', methods=['GET', 'POST'])
 #@jwt_required

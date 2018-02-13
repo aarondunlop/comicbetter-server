@@ -54,13 +54,13 @@ class ImageGetter(object):
             filepath = sized_cover
             return filepath
         elif sized_cover is None or verify_cover_exists is False:
-                filepath = self.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
-                resized_cover = CBFile(source_path=filepath, dest_path=self.issuecoverpath, size=self.size)
-                resized_cover.get_resized_filename() #just getting filename.
-                thumbnail = resized_cover.copy_and_resize() #Saving file.
-                setattr(self.model, converted_size, thumbnail) #Saves to the correct cover attribute.
-                db_session.commit()
-                return thumbnail
+            filepath = self.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
+            resized_cover = CBFile(source_path=filepath, dest_path=self.issuecoverpath, size=self.size)
+            resized_cover.get_resized_filename() #just getting filename.
+            thumbnail = resized_cover.copy_and_resize() #Saving file.
+            setattr(self.model, converted_size, thumbnail) #Saves to the correct cover attribute.
+            db_session.commit()
+            return thumbnail
 
     def make_covers_local(self):
         for img in self.covers:
@@ -84,6 +84,19 @@ class ImageGetter(object):
         cbmover = CBFile(source_path=source, issue=self.model, dest_path=self.issuecoverpath, id=self.id, size=self.size)
         result = cbmover.move_image()
         return result
+
+    def read_page(self):
+        CBFile(dest_path=self.readpath).make_dest_path() #Make sure dir exists.
+        #self.id will be the ID of the series. We need to find the first issue of a series, and then
+        #get and process that instead.
+        issue = Issue(id=self.id).find_by_id()
+        self.filepath=issue.filepath
+        #app.logger.debug('filepath is', self.filepath)
+        self.pages = self.list_extractor()
+        self.pagenum = self.pagenum if self.pagenum < len(self.pages) else (len(self.pages) - 1)
+        self.comicextractor()
+        result = self.readpath + sorted(self.pages)[int(self.pagenum)]
+        return self.readpath + sorted(self.pages)[int(self.pagenum)]
 
     def fetch_series_cover(self):
         for root, dirs, files in os.walk(self.seriescoverpath):
@@ -113,17 +126,6 @@ class ImageGetter(object):
         self.filepath=issue.filepath
         self.pages = self.list_extractor()
         return sorted(self.pages)
-
-    def read_page(self):
-        CBFile(dest_path=self.readpath).make_dest_path() #Make sure dir exists.
-        issue = Issue(id=self.id).find_by_id()
-        self.filepath=issue.filepath
-        #app.logger.debug('filepath is', self.filepath)
-        self.pages = self.list_extractor()
-        self.pagenum = self.pagenum if self.pagenum < len(self.pages) else (len(self.pages) - 1)
-        self.comicextractor()
-        result = self.readpath + sorted(self.pages)[int(self.pagenum)]
-        return self.readpath + sorted(self.pages)[int(self.pagenum)]
 
     def list_extractor(self):
         extension = os.path.splitext(self.filepath)[1]
