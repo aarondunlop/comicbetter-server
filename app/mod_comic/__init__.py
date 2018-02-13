@@ -58,7 +58,7 @@ class ImageGetter(object):
                 resized_cover = CBFile(source_path=filepath, dest_path=self.issuecoverpath, size=self.size)
                 resized_cover.get_resized_filename() #just getting filename.
                 thumbnail = resized_cover.copy_and_resize() #Saving file.
-                setattr(self.issue, converted_size, thumbnail) #Saves to the correct cover attribute.
+                setattr(self.model, converted_size, thumbnail) #Saves to the correct cover attribute.
                 db_session.commit()
                 return thumbnail
 
@@ -81,7 +81,7 @@ class ImageGetter(object):
         self.pagenum = 0 #The API may start at 1 but pagenum starts at 0. Careful.
         source = self.read_page() #Grabs the first file/page.
         #dest_base=(self.issuecoverpath) #Using page0 to denote that the cover is extracted.
-        cbmover = CBFile(source_path=source, issue=self.issue, dest_path=self.issuecoverpath, id=self.id, size=self.size)
+        cbmover = CBFile(source_path=source, issue=self.model, dest_path=self.issuecoverpath, id=self.id, size=self.size)
         result = cbmover.move_image()
         return result
 
@@ -109,8 +109,7 @@ class ImageGetter(object):
         return self.list_images(self.seriescoverpath)
 
     def get_issue_pages(self):
-        issue = Issue(id=self.id)
-        issue = issue.find_by_id()
+        issue = Issue(id=self.id).find_by_id()
         self.filepath=issue.filepath
         self.pages = self.list_extractor()
         return sorted(self.pages)

@@ -190,12 +190,12 @@ def mod_issue_list():
 #@jwt_required
 def mod_issues_update_by_id(issue_id):
     if request.method == 'POST':
-        issue = issues_get_by_issueid(issue_id)
+        issue = Issue(id=issue_id).find_by_id()
         #app.logger.info('thing is', issue_update_by_id(issue, **request.args))
         #return jsonify({ key: value for key, value in issue_update_by_id(issue, **request.args).__dict__.items() if not key == "_sa_instance_state" })
         return jsonify('saved')
     if request.method == 'GET':
-        return jsonify({ key: value for key, value in list(issues_get_by_issueid(issue_id).__dict__.items()) if not key == "_sa_instance_state" })
+        return jsonify({ key: value for key, value in list(Issue(id=issue_id).find_by_id().__dict__.items()) if not key == "_sa_instance_state" })
 #        out = 'covers'
 #    if request.method == 'GET' and not request.args.get('cover'):
 #        return jsonify(get_issue_covers(issue_id))
