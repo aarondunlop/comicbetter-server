@@ -8,6 +8,7 @@ from .zip import SBZip
 from app.models import Issue #, issue_get_file
 from app.models import Series #, series_get_file
 
+from app.models.database import db_session
 from app.mod_lib import CBFile
 
 import logging
@@ -41,8 +42,11 @@ class ImageGetter(object):
     def get_cover(self):
         #Flow - check if cover exists in DB. If so, check if file still exists. If so, return it. If not, extract
         #Comic page 1(0) and return that.
+        #cover_type = path_
+        print(self.imagetype)
+        print(CBFile(imagetype=self.imagetype, id=self.id).path_getter())
         converted_size = ('image_' + str(self.size))
-        sized_cover = getattr(self.issue, converted_size)
+        sized_cover = getattr(self.model, converted_size)
         if sized_cover: #Ensure everything exists before final checks.
             verify_cover = CBFile(dest_path=sized_cover, id=self.id, size=self.size)
             verify_cover_exists = verify_cover.verify_file_present()
@@ -55,7 +59,7 @@ class ImageGetter(object):
                 resized_cover.get_resized_filename() #just getting filename.
                 thumbnail = resized_cover.copy_and_resize() #Saving file.
                 setattr(self.issue, converted_size, thumbnail) #Saves to the correct cover attribute.
-                self.issue.issue_commit()
+                db_session.commit()
                 return thumbnail
 
     def make_covers_local(self):

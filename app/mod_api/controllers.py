@@ -1,9 +1,10 @@
-from flask import Blueprint, request, jsonify, send_file, abort
+from flask import Blueprint, g, request, jsonify, send_file, abort
 
 # Import the database object from the main app module
-from app import db, app
+from app import app
 from app.mod_lib.extractimages import ComicImageExtracter
 from app.models import issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced, Series, Issue, User
+from app.models.database import db_session
 from app.mod_lib import CBFile, scan_library_path, process_cv_get_series_cvid_by_id, process_cv_get_series_details_by_id, process_cv_get_issue_details_by_id, process_cv_get_issue_covers, process_cv_get_series_covers, get_series_covers
 from app.mod_comic import ImageGetter
 from app.mod_devices import SBDevices
@@ -66,18 +67,40 @@ def mod_series_list():
         return jsonify(series.getlist())
 
 @mod_api.route('/series/cover/<int:id>', methods=['GET', 'POST'])
-#@jwt_required
+#This will look up the DB record to see if a cover is specified. If not, it will return the one extracted
+#from the comic. Params list will list all covers, and param numbers will specify one to be returned.
+##@jwt_required
 def api_series_return_covers(id):
-    app.logger.info(id)
-    if request.method == 'GET' and request.args.get('size'):
-        covers = ImageGetter(id=id, size=request.args.get('size'))
-        file = covers.get_series_cover()
-        app.logger.info('ok')
-        app.logger.info(file)
-        if file:
-            return send_file(file)
-        else:
-            abort(404)
+    series=Series(id=id).find_by_id()
+    imagesize = request.args.get('size')
+    if imagesize not in SBConfig.get_image_sizes():
+        return jsonify("Please provide a valid size. Options are: " + str(SBConfig.get_image_sizes()))
+    coverlist = request.args.get('list')
+    if request.method == 'GET' and coverlist is not None: #Return JSON list of covers.
+        return(jsonify('done'))
+    elif request.method == 'GET' and coverlist is None and imagesize is not None: #Return actual cover, in requested size.
+        covers = ImageGetter(id=id, size=imagesize, model=issue, imagetype='series_cover')
+        file = covers.get_cover()
+        try:
+            return send_file(
+                file,
+            )
+        except:
+            return jsonify('ok')
+
+#@mod_api.route('/series/cover/<int:id>', methods=['GET', 'POST'])
+#@jwt_required
+#def api_series_return_covers(id):
+    #app.logger.info(id)
+    #if request.method == 'GET' and request.args.get('size'):
+#        covers = ImageGetter(id=id, size=request.args.get('size'))#
+        #file = covers.get_series_cover()
+        #app.logger.info('ok')
+        #app.logger.info(file)
+        #if file:
+    #        return send_file(file)
+#        else:
+            #abort(404)
 
     if request.method == 'GET' and not request.args.get('size'):
         covers = ImageGetter(id=id)
@@ -111,12 +134,10 @@ def api_issue_return_covers(id):
     if imagesize not in SBConfig.get_image_sizes():
         return jsonify("Please provide a valid size. Options are: " + str(SBConfig.get_image_sizes()))
     coverlist = request.args.get('list')
-    issuepath=SBConfig.get_image_path() + 'issues/covers/' + str(id)
-
     if request.method == 'GET' and coverlist is not None: #Return JSON list of covers.
         return(jsonify('done'))
     elif request.method == 'GET' and coverlist is None and imagesize is not None: #Return actual cover, in requested size.
-        covers = ImageGetter(id=id, size=imagesize, issue=issue, imagetype='ImageGetterissue')
+        covers = ImageGetter(id=id, size=imagesize, model=issue, imagetype='issue_cover')
         file = covers.get_cover()
         try:
             return send_file(

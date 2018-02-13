@@ -1,10 +1,9 @@
 # Import the database object (db) from the main application module
 # We will define this inside /app/__init__.py in the next sections.
-from app import db
-from .main import Base
-from datetime import datetime
 
-from sqlalchemy import Table, Column, Integer, ForeignKey
+from app.models.database import Base, db_session
+from datetime import datetime
+from sqlalchemy import Table, Column, Integer, ForeignKey, String
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -12,11 +11,11 @@ from sqlalchemy.ext.declarative import declarative_base
 class ComicPages(Base):
 
     __tablename__ = 'comicpages'
-
+    id = Column(Integer, primary_key=True)
     # Identification Data: email & password
-    name    = Column(db.String(128),  nullable=False)
-    page    = Column(db.Integer)
-    comicid = Column(db.Integer)
+    name    = Column(String(128),  nullable=False)
+    page    = Column(Integer)
+    comicid = Column(Integer)
 
     # New instance instantiation procedure
     def __init__(self, name, page, comicid):

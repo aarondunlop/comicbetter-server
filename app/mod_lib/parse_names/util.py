@@ -15,7 +15,6 @@ import re,sys,os
 #from PIL import Image
 import os.path
 import yaml
-from app import db
 import re
 
 from os import walk

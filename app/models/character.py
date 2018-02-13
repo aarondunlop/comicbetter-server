@@ -1,10 +1,9 @@
 # Import the database object (db) from the main application module
 # We will define this inside /app/__init__.py in the next sections.
-from app import db
-from .main import Base
-from datetime import datetime
 
-from sqlalchemy import Table, Column, Integer, ForeignKey
+from app.models.database import Base, db_session
+from datetime import datetime
+from sqlalchemy import Table, Column, Integer, ForeignKey, String
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -19,14 +18,16 @@ characterteams = Table('characterteams', Base.metadata,
 )
 
 class Character(Base):
+    __tablename__ = 'character'
+    id = Column(Integer, primary_key=True)
     issues = relationship("Issue", secondary=issuecharacters,back_populates="characters")
     teams = relationship("Team", secondary=characterteams,back_populates="characters")
-    cvid = Column(db.String(15))
-    cvurl = Column(db.String(200))
-    name = Column(db.String(200))
-    desc = Column(db.String(500))
-    #teams = db.ManyToManyField(Team)
-    image = Column(db.String(255))
+    cvid = Column(String(15))
+    cvurl = Column(String(200))
+    name = Column(String(200))
+    desc = Column(String(500))
+    #teams = ManyToManyField(Team)
+    image = Column(String(255))
 
     def __str__(self):
         return self.name

@@ -1,19 +1,20 @@
 # Import the database object (db) from the main application module
 # We will define this inside /app/__init__.py in the next sections.
-from app import db
-from .main import Base
-from datetime import datetime
 
-from sqlalchemy import Table, Column, Integer, ForeignKey
+from app.models.database import Base, db_session
+from datetime import datetime
+from sqlalchemy import Table, Column, Integer, ForeignKey, String
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
 class Publisher(Base):
-    cvid = Column(db.String(15))
-    cvurl = Column(db.String(200))
-    name = Column(db.String(200))
-    desc = Column(db.String(500))
-    logo = Column(db.String(255))
+    __tablename__ = 'publisher'
+    id = Column(Integer, primary_key=True)
+    cvid = Column(String(15))
+    cvurl = Column(String(200))
+    name = Column(String(200))
+    desc = Column(String(500))
+    logo = Column(String(255))
     series_id = Column(Integer, ForeignKey('series.id'))
     series = relationship("Series")
 
@@ -26,18 +27,18 @@ class Publisher(Base):
             setattr(self, key, value)
 
     def update_or_create_by_cvid(self):
-        publisher = db.session.query(Publisher).filter_by(cvid=self.cvid).first() or False
+        publisher = db_session.query(Publisher).filter_by(cvid=self.cvid).first() or False
         if not publisher:
             publisher = Publisher()
-        db.session.add(publisher)
+        db_session.add(publisher)
         for key, value in self.kwargs.items():
             newvalue=str(value[0]) if isinstance(value, list) else str(value)
             setattr(publisher, key, newvalue)
 
         if self.commit:
             try:
-                db.session.commit()
-                db.session.flush()
+                db_session.commit()
+                db_session.flush()
             except:
-                db.session.rollback()
+                db_session.rollback()
                 raise

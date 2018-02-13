@@ -18,7 +18,7 @@ from sqlalchemy import *
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 
-from app import db, app
+from app import app
 import logging
 
 logging.basicConfig(level=logging.DEBUG)

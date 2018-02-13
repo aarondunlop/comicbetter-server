@@ -1,10 +1,9 @@
 # Import the database object (db) from the main application module
 # We will define this inside /app/__init__.py in the next sections.
-from .main import Base
-from app import db
+from app.models.database import Base, db_session
 from datetime import datetime
 
-from sqlalchemy import Table, Column, Integer, ForeignKey
+from sqlalchemy import Table, Column, Integer, ForeignKey, String
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -32,6 +31,7 @@ class Serializer(object):
 
 class Issue(Base, Serializer):
     __tablename__ = 'issue'
+    id = Column(Integer, primary_key=True)
     #series = relationship("Series", secondary=issueseries,back_populates="issues")
     series_id = Column(Integer, ForeignKey('series.id'))
     series = relationship("Series", back_populates="issues")
@@ -39,29 +39,29 @@ class Issue(Base, Serializer):
     characters = relationship("Character", secondary=issuecharacters,back_populates="issues")
     creators = relationship("Creator", secondary=issuecreators,back_populates="issues")
     teams = relationship("Team", secondary=issueteams,back_populates="issues")
-    cvid = Column(db.String(15))
-    cvurl = Column(db.String(200))
-    #series = db.ForeignKey(Series, on_delete=db.CASCADE)
-    name = Column(db.String(200))
-    number = Column(db.Integer)
-    date = Column(db.Integer)
-    description = Column(db.String(500))
-    #arcs = db.ManyToManyField(Arc)
-    #characters = db.ManyToManyField(Character)
-    #creators = db.ManyToManyField(Creator)
-    #teams = db.ManyToManyField(Team)
-    file = Column(db.String(255))
-    cover = Column(db.String(255))
-    image_large = Column(db.String(255))
-    image_icon = Column(db.String(255))
-    image_medium = Column(db.String(255))
-    image_tiny = Column(db.String(255))
-    image_small = Column(db.String(255))
-    image_thumb = Column(db.String(255))
-    image_screen = Column(db.String(255))
-    image_super = Column(db.String(255))
-    filepath    = Column(db.String(128),  nullable=False)
-    filename    = Column(db.String(128))
+    cvid = Column(String(15))
+    cvurl = Column(String(200))
+    #series = ForeignKey(Series, on_delete=CASCADE)
+    name = Column(String(200))
+    number = Column(Integer)
+    date = Column(Integer)
+    description = Column(String(500))
+    #arcs = ManyToManyField(Arc)
+    #characters = ManyToManyField(Character)
+    #creators = ManyToManyField(Creator)
+    #teams = ManyToManyField(Team)
+    file = Column(String(255))
+    cover = Column(String(255))
+    image_large = Column(String(255))
+    image_icon = Column(String(255))
+    image_medium = Column(String(255))
+    image_tiny = Column(String(255))
+    image_small = Column(String(255))
+    image_thumb = Column(String(255))
+    image_screen = Column(String(255))
+    image_super = Column(String(255))
+    filepath    = Column(String(128),  nullable=False)
+    filename    = Column(String(128))
     devices = relationship(
     "Device",
     secondary=deviceissues,
@@ -81,22 +81,22 @@ class Issue(Base, Serializer):
         return [m.serialize() for m in l]
 
     def get_file(self):
-        issue = db.session.query(Issue).filter_by(id=self.id).first()
+        issue = db_session.query(Issue).filter_by(id=self.id).first()
         return issue.filename
 
     def get_filepath(self):
-        issue = db.session.query(Issue).filter_by(id=self.id).first()
+        issue = db_session.query(Issue).filter_by(id=self.id).first()
         return issue.filepath
 
     def get_abfilepath(self):
-        issue = db.session.query(Issue).filter_by(id=self.id).first()
+        issue = db_session.query(Issue).filter_by(id=self.id).first()
         output = issue.filepath + '/' + issue.filename
         return output
 
     def getlist(self):
         issues=''
         diff=int(self.limit)*int(self.page)
-        issues = db.session.query(Issue).limit(self.limit).offset(diff).all()
+        issues = db_session.query(Issue).limit(self.limit).offset(diff).all()
         #values=['name', 'description', 'id']
         #issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id])) for row in issues]
         return issues
@@ -104,28 +104,28 @@ class Issue(Base, Serializer):
     def getserieslist(self):
         issues=''
         diff=int(self.limit)*int(self.page)
-        issues = db.session.query(Issue).filter(Issue.series_id == self.series_id).limit(self.limit).offset(diff).all()
+        issues = db_session.query(Issue).filter(Issue.series_id == self.series_id).limit(self.limit).offset(diff).all()
         #values=['name', 'description', 'id']
         #issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id])) for row in issues]
         return issues
 
     def find_by_id(self):
-        issue = db.session.query(Issue).filter_by(id=self.id).first() or False
+        issue = db_session.query(Issue).filter_by(id=self.id).first() or False
         return issue
 
     def issue_find_by_path_or_id(self):
         if self.id:
-            issue = db.session.query(Issue).filter_by(id=self.id).first() or False
+            issue = db_session.query(Issue).filter_by(id=self.id).first() or False
         elif self.name:
-            issue = db.session.query(Issue).filter_by(filepath=self.filepath).first() or False
+            issue = db_session.query(Issue).filter_by(filepath=self.filepath).first() or False
         return issue
 
     def issue_commit(self):
         try:
-            db.session.commit()
-            db.session.flush()
+            db_session.commit()
+            db_session.flush()
         except:
-            db.session.rollback()
+            db_session.rollback()
             raise
 
     def process_issue_by_id(issue):
@@ -142,29 +142,29 @@ class Issue(Base, Serializer):
 
     def update_or_create(self):
         if self.id:
-            issue = db.session.query(Issue).filter_by(id=self.id).first() or False
+            issue = db_session.query(Issue).filter_by(id=self.id).first() or False
         elif self.filepath:
-            issue = db.session.query(Issue).filter_by(filepath=self.filepath).first() or False
+            issue = db_session.query(Issue).filter_by(filepath=self.filepath).first() or False
         if not issue:
             issue = Issue(filepath=self.filepath)
-            db.session.add(issue)
+            db_session.add(issue)
         for key, value in self.kwargs.items():
             newvalue=str(value[0]) if isinstance(value, list) else str(value)
             setattr(issue, key, newvalue)
         try:
-            db.session.commit()
-            db.session.flush()
+            db_session.commit()
+            db_session.flush()
         except:
-            db.session.rollback()
+            db_session.rollback()
             raise
         return issue
 
 
     def match_or_save(self):
-        matching_issue = db.session.query(Issue).filter_by(name=self.issue_name).first()
+        matching_issue = db_session.query(Issue).filter_by(name=self.issue_name).first()
         if not matching_issue or self.force:
             matching_issue = Issue(name=self.issue_name)
-            db.session.add(matching_issue)
-            db.session.commit()
-            db.session.flush()
+            db_session.add(matching_issue)
+            db_session.commit()
+            db_session.flush()
         return matching_issue

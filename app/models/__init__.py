@@ -4,7 +4,6 @@ from .comicpages import *
 from .creator import *
 from .issue import Issue
 from .libraryfolders import *
-from .main import *
 from .publisher import *
 from .series import *
 from .settings import *

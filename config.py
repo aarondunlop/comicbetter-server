@@ -51,6 +51,12 @@ class SBConfig(object):
         return SBConfig.cfg()['directories']['comics']
 
     @staticmethod
+    def get_db_config():
+        value = ('sqlite:///' + SBConfig.cfg()['db']['sqlite']['path'])
+        print(value)
+        return ('sqlite:///' + str(SBConfig.cfg()['db']['sqlite']['path']))
+
+    @staticmethod
     def get_image_path():
         return SBConfig.cfg()['directories']['images']
 

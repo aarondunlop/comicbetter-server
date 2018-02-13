@@ -7,8 +7,6 @@ from pathlib import Path, PurePosixPath
 
 from PIL import Image
 
-from app import db
-
 from app.models import Issue, Publisher, Series, issues_list, series_list, series_list_by_id, issues_list_by_series, get_all_issues, issues_get_by_filename, issues_get_by_issueid, series_match_or_save, issue_match_or_create, issue_update_by_id, series_update_or_create, series_get_by_seriesid, publisher_update_or_create, publisher_get_from_cvid, series_get_from_cvid, issue_update_or_create, issue_get_by_issueid
 from app.mod_lib.parse_names.comicimporter import MetadataImporter
 from config import SBConfig
@@ -37,6 +35,7 @@ class CBFile(object):
         self.source_size=''
         self.imagepath=SBConfig.get_image_path()
         self.filetype=''
+        self.image_type=''
         self.id = ''
         self.image_sizes=SBConfig.get_image_sizes()
         for key, value in kwargs.items():
@@ -46,6 +45,15 @@ class CBFile(object):
         self.issuepath=SBConfig.get_image_path() + '/' + 'issues/pages/' + str(self.id) + '/'
         self.seriescoverpath=SBConfig.get_image_path() + '/' + 'series/covers/' + str(self.id) + '/'
         self.issuecoverpath=SBConfig.get_image_path() + '/' + 'issues/covers/' + str(self.id) + '/'
+
+    def path_getter(self):
+        print(self.imagetype)
+        return {
+            'issue_cover': self.seriescoverpath,
+            'series_cover': self.issuecoverpath,
+            'issue_page': self.issuepath,
+            'series_page': self.seriespath
+        }.get(self.imagetype)    # 9 is default if x not found
 
     def get_image_path_by_size(self):
         basepath = (os.path.splitext(self.dest_path)[0] + '_' + self.size + os.path.splitext(self.dest_path)[1])
@@ -177,8 +185,8 @@ def scan_library_path():
         issue=Issue(filename=filename, filepath=filepath, series_id=series.id, number=extracted[1])
         issue=issue.update_or_create()
 
-    db.session.commit()
-    db.session.flush()
+    db_session.commit()
+    db_session.flush()
     return 'comicfilelist'
 
 def process_series_by_filename(filename, force=False):
@@ -199,7 +207,7 @@ def process_series_by_filename(filename, force=False):
 #    return 'ok'
 
 def process_library_cv_issue():
-    comics = db.session.query(Issue)
+    comics = db_session.query(Issue)
     for comic in comics:
         importer = MetadataImporter()
         importer.import_comic_records(comic, 'cv')

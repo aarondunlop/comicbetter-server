@@ -1,16 +1,21 @@
 # Import flask and template operators
-from flask import Flask, render_template, request, make_response
+from flask import Flask, g, render_template, request, make_response
 import logging
+from sqlalchemy import create_engine
+
 
 # Import SQLAlchemy
 from flask_sqlalchemy import SQLAlchemy
+import sqlalchemy
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
-
-
 from logging.handlers import RotatingFileHandler
-
+from app.models.database import db_session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.ext.declarative import declarative_base
+from app.models.database import Session
 # Define the WSGI application object
 app = Flask(__name__)
 
@@ -20,11 +25,15 @@ app.config.setdefault('MAKO_TRANSLATE_EXCEPTIONS', False)
 app.config.setdefault('WEBPACK_MANIFEST_PATH', './build/manifest.json')
 # Define the database object which is imported
 # by modules and controllers
-db = SQLAlchemy(app)
+
+#db = SQLAlchemy(app)
+
 #Session = sessionmaker(bind=engine)
 #session = Session()
 
-#@app.before_request
+@app.before_request
+def create_session():
+    g.session = Session()
 #def log_request_info():
     #app.logger.debug('Request Headers: %s', request.headers)
     #app.logger.debug('Request Method: %s', request.method)
@@ -32,6 +41,10 @@ db = SQLAlchemy(app)
     #app.logger.debug('Request: %s', request)
     #return request
     #if False is True:
+
+@app.teardown_appcontext
+def shutdown_session(exception=None):
+    db_session.remove()
 
 @app.after_request
 def log_response_info(response):
@@ -76,4 +89,4 @@ app.register_blueprint(api_module)
 
 # Build the database:
 # This will create the database file using SQLAlchemy
-db.create_all()
+#db.create_all()
