@@ -165,15 +165,15 @@ def mod_issue_images(id):
             return jsonify('ok')
     return 'ok'
 
-@mod_api.route('/process/library/cv/issue/covers/<int:id>', methods=['GET', 'POST'])
+@mod_api.route('/cv/issue/covers/<int:id>', methods=['GET', 'POST'])
 #@jwt_required
 def mod_cv_get_issue_covers(id):
     if request.method == 'POST' or request.method == 'GET':
         comic = ImageGetter(id=id, imagetype='issue_cover', size=request.args.get('size'))
-        result = comic.fetch_cv_cover()
+        result = comic.fetch_cv_covers()
     return jsonify('done')
 
-@mod_api.route('/process/library/cv/series/covers/<int:id>', methods=['GET', 'POST'])
+@mod_api.route('/cv/series/covers/<int:id>', methods=['GET', 'POST'])
 #@jwt_required
 def mod_cv_get_series_covers(id):
     if request.method == 'POST' or request.method == 'GET':

@@ -174,19 +174,28 @@ class CVFetch(object):
         self.covers = {size: {'path': (self.dest_path + size)} for size in sizes}
 
     def get_cv_size_urls(self):
+        print('at get_cv_sizes' + str(self.details))
         self.covers['small']['url'] = self.details['image']['small_url']
-        self.covers['large']['url'] = self.details['image']['screen_large_url']
-        self.covers['medium']['url']= self.details['image']['medium_url']
-        self.covers['icon']['url']= self.details['image']['icon_url']
-        self.covers['tiny']['url']= self.details['image']['tiny_url']
-        self.covers['thumb']['url']= self.details['image']['thumb_url']
-        self.covers['super']['url']= self.details['image']['super_url']
+        self.covers['large']['url'] = self.details['image']['small_url']
+        self.covers['medium']['url']= self.details['image']['small_url']
+        self.covers['icon']['url']= self.details['image']['small_url']
+        self.covers['tiny']['url']= self.details['image']['small_url']
+        self.covers['thumb']['url']= self.details['image']['small_url']
+        self.covers['super']['url']= self.details['image']['small_url']
 
     def fetch_covers(self):
         #images = (image for image in details['image'] if image not in 'image_tags')
         #for image in images:
         importer = CVWrapper(model=self.model)
-        self.details = importer.get_series_details()['results']
+
+        if self.imagetype is 'series_cover':
+            details = importer.get_series_details()
+        elif self.imagetype is 'issue_cover':
+            details = importer.get_issue_details()
+        print(type(details))
+        for detail in details:
+            print(detail)
+        self.details = details
         self.get_cv_size_paths()
         self.get_cv_size_urls()
 
@@ -197,6 +206,7 @@ class CVFetch(object):
                     filename = self.dest_path + self.url.rsplit('/', 1)[1]
                     fileext = PurePosixPath(filename).suffix
                     self.filename = self.dest_path + (str(PurePosixPath(filename).stem) + '_' + str(size)) + fileext
+                    print(self.filename)
                 self.download_file()
                 converted_size = ('image_' + str(size))
                 setattr(self.model, converted_size, self.filename)
@@ -215,7 +225,7 @@ class CVFetch(object):
             self.model.name=str(details['name'])
 
         elif self.imagetype is 'series_cover':
-            details = importer.get_series_details()['results']
+            details = importer.get_series_details()
             self.model.cvurl=str(details['api_detail_url'])
             self.model.description=str(details['description'])
         #publisher = db_session.query(Publisher).filter(Publisher.id==details['publisher']['id']).first()

@@ -52,6 +52,7 @@ class ImageGetter(object):
             self.model = db_session.query(Issue).filter(Issue.id==self.id).first()
             #print(self.model.cvid, self.id)
         covers = CVFetch(model=self.model, dest_path=self.dest_path, size=self.size, imagetype = self.imagetype).fetch_covers()
+        print(covers)
         db_session.commit()
         return covers
 

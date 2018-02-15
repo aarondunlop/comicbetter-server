@@ -112,15 +112,16 @@ class CVWrapper(object):
         query_params['field_list'] = 'deck,description,image,name,publisher,api_detail_url'
         query_response = self._query_cv((self.baseurl + 'volume/4050-' + self.model.cvid), query_params)
         query_response['results']['description'] = self.get_p(query_response['results']['description'])
-        return query_response
+        print(query_response)
+        return query_response['results']
 
     def get_issue_details(self):
         query_params = self.base_params
         query_params['resources'] = ''
         query_params['field_list'] = 'cover_date,description,image,name,aliases'
-        query_response = self._query_cv((self.baseurl + 'issue/4000-' + str(self.model.cvid)), query_params)['results']
-        query_response['description'] = self.get_p(query_response['description'])
-        return query_response
+        query_response = self._query_cv((self.baseurl + 'issue/4000-' + str(self.model.cvid)), query_params)
+        query_response['results']['description'] = self.get_p(query_response['results']['description'])
+        return query_response['results']
 
     @classmethod
     def get_p(self, query):
