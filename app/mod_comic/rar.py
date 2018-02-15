@@ -14,13 +14,13 @@ class SBRar(object):
         self.fp = rarfile.RarFile(self.filename, 'r')
 
     def listpages(self):
-        pagelist = self.fp.namelist()
+        pagelist = self.fp.infolist()
         #We don't want to extract all (security risks) and we don't want nested archives. Edge cases need dealing with
         #on the client side. Strip hidden files and directories from the path.
         for file in list(pagelist):
-            if file.endswith('/') or file.startswith('.'):
+            if file.filename.startswith('.') or file.isdir():
                 pagelist.remove(file)
-        pagelist = [PurePosixPath(file).name for file in pagelist]
+        pagelist = [PurePosixPath(file.filename).name for file in pagelist]
         return pagelist
 
     def extract(self):

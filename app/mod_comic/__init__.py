@@ -9,7 +9,7 @@ from app.models import Issue #, issue_get_file
 from app.models import Series #, series_get_file
 
 from app.models.database import db_session
-from app.mod_lib import CBFile
+from app.mod_lib import CBFile, CVFetch
 
 import logging
 logger = logging.getLogger(__name__)
@@ -39,14 +39,29 @@ class ImageGetter(object):
         file = covers.get_issue_cover()
         return file
 
+    def fetch_cv_covers(self):
+        #Flow - check if cover exists in DB. If so, check if file still exists. If so, return it. If not, call cvfetch to
+        #download it. Todo, list each dir, run posixpath to get stem, and compare each option against array.
+        #This will prevent repeat downloads/hammering their API.
+        self.dest_path = CBFile(imagetype=self.imagetype, id=self.id).path_getter()
+        print(self.dest_path)
+        if self.imagetype is 'series_cover':
+            self.model = db_session.query(Series).filter(Series.id==self.id).first()
+            #print(self.model.cvid, self.id)
+        elif self.imagetype is 'issue_cover':
+            self.model = db_session.query(Issue).filter(Issue.id==self.id).first()
+            #print(self.model.cvid, self.id)
+        covers = CVFetch(model=self.model, dest_path=self.dest_path, size=self.size, imagetype = self.imagetype).fetch_covers()
+        db_session.commit()
+        return covers
+
     def get_cover(self):
         #Flow - check if cover exists in DB. If so, check if file still exists. If so, return it. If not, extract
         #Comic page 1(0) and return that.
         #cover_type = path_
-        print(self.imagetype)
-        print(CBFile(imagetype=self.imagetype, id=self.id).path_getter())
-        converted_size = ('image_' + str(self.size))
-        sized_cover = getattr(self.model, converted_size)
+        CBFile(imagetype=self.imagetype, id=self.id).path_getter()
+        converted_size = ('image_' + str(self.size)) #Get the model attribute name for the lookup
+        sized_cover = getattr(self.model, converted_size) #This is the value of the model attribute for the right version.
         if sized_cover: #Ensure everything exists before final checks.
             verify_cover = CBFile(dest_path=sized_cover, id=self.id, size=self.size)
             verify_cover_exists = verify_cover.verify_file_present()
@@ -54,26 +69,22 @@ class ImageGetter(object):
             filepath = sized_cover
             return filepath
         elif sized_cover is None or verify_cover_exists is False:
-            filepath = self.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
-            resized_cover = CBFile(source_path=filepath, dest_path=self.issuecoverpath, size=self.size)
+            #If this is for the series, we need to find the first issue of that series and do all these steps
+            #on that instead.
+            if self.imagetype is 'series_cover':
+                issue = db_session.query(Issue).join(Issue.series).filter(Issue.series_id==self.id).first()
+                series_cover = ImageGetter(id=issue.id, size=self.size, model=issue, imagetype='issue_cover')
+                filepath = series_cover.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
+                resized_cover = CBFile(source_path=filepath, dest_path=self.seriescoverpath, size=self.size)
+            elif self.imagetype is 'issue_cover':
+                filepath = self.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
+                resized_cover = CBFile(source_path=filepath, dest_path=self.issuecoverpath, size=self.size)
             resized_cover.get_resized_filename() #just getting filename.
             thumbnail = resized_cover.copy_and_resize() #Saving file.
+
             setattr(self.model, converted_size, thumbnail) #Saves to the correct cover attribute.
             db_session.commit()
             return thumbnail
-
-    def make_covers_local(self):
-        for img in self.covers:
-            if img['size'] == 'small' or img['size'] == 'thumb':
-                self.download_file_name = getattr(self.issue, 'image_' + img['size'])
-                self.download_file(self.download_file_name, img['path'])
-        return self.covers
-
-    def get_issue_covers(self):
-        issuepath=SBConfig.get_image_path() + 'issues/covers/' + str(id)
-        sizes=['small','large','medium','icon','tiny','thumb','super']
-        self.covers=[{'size': size, 'path': self.issuecoverpath + '/' + self.covername + '_' + self.size + '.jpg'} for size in sizes]
-        return self.covers
 
     def extract_issue_cover(self):
         #This gets called when no covers exist, or when the existing one is overridden.
@@ -87,8 +98,6 @@ class ImageGetter(object):
 
     def read_page(self):
         CBFile(dest_path=self.readpath).make_dest_path() #Make sure dir exists.
-        #self.id will be the ID of the series. We need to find the first issue of a series, and then
-        #get and process that instead.
         issue = Issue(id=self.id).find_by_id()
         self.filepath=issue.filepath
         #app.logger.debug('filepath is', self.filepath)

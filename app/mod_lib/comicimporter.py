@@ -27,9 +27,9 @@ logging.basicConfig(level=logging.DEBUG)
 forever_cache = FileCache('./var/comicvine-cache', forever=True)
 sess = CacheControl(requests.Session(), forever_cache, heuristic=ExpiresAfter(days=1))
 
-class MetadataImporter(object):
-    def __init__(self):
-
+class CVWrapper(object):
+    def __init__(self, **kwargs):
+        self.model=''
         # API Strings
         self.baseurl = 'https://comicvine.gamespot.com/api/'
         self.imageurl = 'https://comicvine.gamespot.com/api/image/'
@@ -38,7 +38,6 @@ class MetadataImporter(object):
         self.api_key=SBConfig.get_api_key()
         self.base_params = { 'format': 'json', 'api_key': self.api_key }
         self.headers = { 'user-agent': 'somethingbetter' }
-
         # API field strings
         self.arc_fields = 'deck,description,id,image,name,site_detail_url'
         self.character_fields = 'deck,description,id,image,name,site_detail_url'
@@ -51,6 +50,19 @@ class MetadataImporter(object):
         self.query_series_limit = '10'
         self.series_fields = 'api_detail_url,deck,description,id,name,publisher,site_detail_url,start_year'
         self.team_fields = 'characters,deck,description,id,image,name,site_detail_url'
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def get_issue_cvid_by_number(self):
+        query_params = self.base_params
+        query_params['resources'] = 'volume'
+        query_params['field_list'] = 'issues'
+        query_response = self._query_cv((self.baseurl + 'volume/4050-' + str(self.model.series.cvid)), query_params)
+        if self.model.series.cvid:
+            cvresult = next((series_issue['id'] for series_issue in query_response['results']['issues'] if int(series_issue['issue_number']) == self.model.number), None)
+        else:
+            cvresult="Must define Series ID first."
+        return cvresult
 
     def import_issue_details(self, comic):
         query_params = self.base_params
@@ -94,30 +106,19 @@ class MetadataImporter(object):
         row = []
         return query_response
 
-    def get_series_details(self, series):
+    def get_series_details(self):
         query_params = self.base_params
         query_params['resources'] = 'volume'
         query_params['field_list'] = 'deck,description,image,name,publisher,api_detail_url'
-        query_response = self._query_cv((self.baseurl + 'volume/4050-' + series.cvid), query_params)
+        query_response = self._query_cv((self.baseurl + 'volume/4050-' + self.model.cvid), query_params)
         query_response['results']['description'] = self.get_p(query_response['results']['description'])
         return query_response
 
-    def get_issue_cvid_by_number(self, issue):
-        query_params = self.base_params
-        query_params['resources'] = 'volume'
-        query_params['field_list'] = 'issues'
-        query_response = self._query_cv((self.baseurl + 'volume/4050-' + str(issue.series.cvid)), query_params)
-        if issue.series.cvid:
-            cvresult = next((series_issue['id'] for series_issue in query_response['results']['issues'] if int(series_issue['issue_number']) == issue.number), None)
-        else:
-            cvresult="Must define Series ID first."
-        return cvresult
-
-    def get_issue_details(self, issue):
+    def get_issue_details(self):
         query_params = self.base_params
         query_params['resources'] = ''
         query_params['field_list'] = 'cover_date,description,image,name,aliases'
-        query_response = self._query_cv((self.baseurl + 'issue/4000-' + str(issue.cvid)), query_params)['results']
+        query_response = self._query_cv((self.baseurl + 'issue/4000-' + str(self.model.cvid)), query_params)['results']
         query_response['description'] = self.get_p(query_response['description'])
         return query_response
 

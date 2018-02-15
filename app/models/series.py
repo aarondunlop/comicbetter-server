@@ -39,6 +39,16 @@ class Series(Base):
     def __str__(self):
         return self.name
 
+    def get_first_issue(self):
+        series = db_session.query(Series).filter(id == id).first()
+        issues = db_session.query(Issue).filter(Issue.series_id == self.series_id).all()
+        return issues
+
+    def get_json_by_id(self):
+        series = db_session.query(Series).filter_by(id=self.id).first() or False
+        seriesJson = ({ key: value for key, value in list(series.__dict__.items()) if not key == "_sa_instance_state" })
+        return seriesJson
+
     def issue_numerical_order_set(self):
         return self.issue_set.all().order_by('number')
 
@@ -58,12 +68,10 @@ class Series(Base):
         return series.filepath + '/' + series.filename
 
     def match_or_save(self):
-        matching_series = db_session.query(Series).filter_by(name=self.series_name).first()
-        if not matching_series or self.force:
-            matching_series = Series(name=self.series_name)
+        matching_series = db_session.query(Series).filter_by(name=self.name).first()
+        if not matching_series:
+            matching_series = Series(name=self.name)
             db_session.add(matching_series)
-            db_session.commit()
-            db_session.flush()
         return matching_series
 
     def getlist(self):
@@ -73,3 +81,12 @@ class Series(Base):
         values=['name', 'description', 'id']
         series = [dict(list(zip(values, [row.name, row.description if row.name and row.description else None, row.id]))) for row in series]
         return series
+
+    def update_or_create(self):
+        series = db_session.query(Series).filter_by(id=self.id).first() or False
+        if not series:
+            series = Series(id=series_id)
+        for key, value in kwargs.items():
+            newvalue=value[0] if isinstance(value, list) else value
+            setattr(series, key, newvalue)
+        return 'ok'

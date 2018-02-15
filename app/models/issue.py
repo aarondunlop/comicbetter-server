@@ -3,7 +3,7 @@
 from app.models.database import Base, db_session
 from datetime import datetime
 
-from sqlalchemy import Table, Column, Integer, ForeignKey, String
+from sqlalchemy import Table, Column, Integer, ForeignKey, String, DateTime
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -51,7 +51,7 @@ class Issue(Base, Serializer):
     #creators = ManyToManyField(Creator)
     #teams = ManyToManyField(Team)
     file = Column(String(255))
-    cover = Column(String(255))
+    cover_date = Column(DateTime(255))
     image_large = Column(String(255))
     image_icon = Column(String(255))
     image_medium = Column(String(255))
@@ -97,8 +97,8 @@ class Issue(Base, Serializer):
         issues=''
         diff=int(self.limit)*int(self.page)
         issues = db_session.query(Issue).limit(self.limit).offset(diff).all()
-        #values=['name', 'description', 'id']
-        #issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id])) for row in issues]
+        values=['name', 'description', 'id']
+        issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id])) for row in issues]
         return issues
 
     def getserieslist(self):
@@ -151,12 +151,6 @@ class Issue(Base, Serializer):
         for key, value in self.kwargs.items():
             newvalue=str(value[0]) if isinstance(value, list) else str(value)
             setattr(issue, key, newvalue)
-        try:
-            db_session.commit()
-            db_session.flush()
-        except:
-            db_session.rollback()
-            raise
         return issue
 
 
