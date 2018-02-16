@@ -50,7 +50,6 @@ class CBFile(object):
         self.issuecoverpath=SBConfig.get_image_path() + '/' + 'issues/covers/' + str(self.id) + '/'
 
     def path_getter(self):
-        print(self.imagetype)
         return {
             'issue_cover': self.issuecoverpath,
             'series_cover': self.seriescoverpath,
@@ -84,20 +83,18 @@ class CBFile(object):
     def copy_and_resize(self):
         dest_filename = self.get_resized_filename()
         dimensions=(self.image_sizes[self.size]['width'], self.image_sizes[self.size]['height'])
-        print(self.image_sizes[self.size])
         #size =
-        print('at copy and resize. source: ' + str(self.source_path) + 'dest: '+ self.dest_path)
         self.make_dest_path()
         try:
             im = Image.open(self.source_path)
             im.thumbnail(dimensions, Image.ANTIALIAS)
             im.save(dest_filename, "JPEG")
             return dest_filename
-        except IOError:
-            print('cannot create thumbnail for ' + infile)
+        except IOError as e:
+            print(e)
+            pass
 
     def get_resized_filename(self):
-        print(self.source_path)
         fileext = PurePosixPath(self.source_path).suffix
         filename = (str(PurePosixPath(self.source_path).stem) + '_' + str(self.size))
         dest_file = self.dest_path + filename + fileext
@@ -174,7 +171,6 @@ class CVFetch(object):
         self.covers = {size: {'path': (self.dest_path + size)} for size in sizes}
 
     def get_cv_size_urls(self):
-        print('at get_cv_sizes' + str(self.details))
         self.covers['small']['url'] = self.details['image']['small_url']
         self.covers['large']['url'] = self.details['image']['small_url']
         self.covers['medium']['url']= self.details['image']['small_url']
@@ -192,9 +188,6 @@ class CVFetch(object):
             details = importer.get_series_details()
         elif self.imagetype is 'issue_cover':
             details = importer.get_issue_details()
-        print(type(details))
-        for detail in details:
-            print(detail)
         self.details = details
         self.get_cv_size_paths()
         self.get_cv_size_urls()
@@ -206,7 +199,6 @@ class CVFetch(object):
                     filename = self.dest_path + self.url.rsplit('/', 1)[1]
                     fileext = PurePosixPath(filename).suffix
                     self.filename = self.dest_path + (str(PurePosixPath(filename).stem) + '_' + str(size)) + fileext
-                    print(self.filename)
                 self.download_file()
                 converted_size = ('image_' + str(size))
                 setattr(self.model, converted_size, self.filename)
@@ -217,9 +209,7 @@ class CVFetch(object):
         if self.imagetype is 'issue_cover':
             self.model.cvid = importer.get_issue_cvid_by_number() #This gets the issue CVID via the Series CVID.
             details = importer.get_issue_details()
-            print(details)
             coverted_cover_date = datetime.strptime(str(details['cover_date']), '%Y-%M-%d')
-            print(coverted_cover_date)
             self.model.date=coverted_cover_date
             self.model.description=str(details['description'])
             self.model.name=str(details['name'])
@@ -244,7 +234,6 @@ class CVFetch(object):
             traceback.print_tb(exc_traceback, limit=1, file=sys.stdout)
             traceback.print_exception(exc_type, exc_value, exc_traceback,
                               limit=2, file=sys.stdout)
-            print
         return details, self.model
 
     def download_file(self):#url, filename, force=False):
@@ -279,8 +268,11 @@ class CVFetch(object):
         #issue = issues_get_by_issueid(issue_id)
         extracted = extractname(filename)
         series_name = remove_special_characters(extracted[0])
-        series = Series(name=series_name).match_or_save()
-        print(series)
+        series = db_session.query(Series).filter_by(name=series_name).first()
+        if not series:
+            series = Series(name=series_name)
+            db_session.add(series)
+        db_session.flush()
         return series, extracted
 
     def scantree(self, path):
@@ -298,8 +290,9 @@ class CVFetch(object):
 
         for filename, filepath in comicfilelist:
             series, extracted = self.process_series_by_filename(filename)
-            issue=Issue(filename=filename, filepath=filepath, series_id=series.id, number=extracted[1])
+            issue=Issue(filename=filename, filepath=filepath, number=extracted[1])
             issue=issue.update_or_create()
+            series.issues.append(issue)
 
         db_session.commit()
         db_session.flush()

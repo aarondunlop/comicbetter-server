@@ -5,6 +5,8 @@ from .tar import SBTar
 from .rar import SBRar
 from .zip import SBZip
 
+import magic
+
 from app.models import Issue #, issue_get_file
 from app.models import Series #, series_get_file
 
@@ -44,22 +46,17 @@ class ImageGetter(object):
         #download it. Todo, list each dir, run posixpath to get stem, and compare each option against array.
         #This will prevent repeat downloads/hammering their API.
         self.dest_path = CBFile(imagetype=self.imagetype, id=self.id).path_getter()
-        print(self.dest_path)
         if self.imagetype is 'series_cover':
             self.model = db_session.query(Series).filter(Series.id==self.id).first()
-            #print(self.model.cvid, self.id)
         elif self.imagetype is 'issue_cover':
             self.model = db_session.query(Issue).filter(Issue.id==self.id).first()
-            #print(self.model.cvid, self.id)
         covers = CVFetch(model=self.model, dest_path=self.dest_path, size=self.size, imagetype = self.imagetype).fetch_covers()
-        print(covers)
         db_session.commit()
-        return covers
 
     def get_cover(self):
         #Flow - check if cover exists in DB. If so, check if file still exists. If so, return it. If not, extract
-        #Comic page 1(0) and return that.
-        #cover_type = path_
+        #first Comic page and return that. Todo, unit testing/input validation.
+
         CBFile(imagetype=self.imagetype, id=self.id).path_getter()
         converted_size = ('image_' + str(self.size)) #Get the model attribute name for the lookup
         sized_cover = getattr(self.model, converted_size) #This is the value of the model attribute for the right version.
@@ -74,9 +71,12 @@ class ImageGetter(object):
             #on that instead.
             if self.imagetype is 'series_cover':
                 issue = db_session.query(Issue).join(Issue.series).filter(Issue.series_id==self.id).first()
-                series_cover = ImageGetter(id=issue.id, size=self.size, model=issue, imagetype='issue_cover')
-                filepath = series_cover.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
-                resized_cover = CBFile(source_path=filepath, dest_path=self.seriescoverpath, size=self.size)
+                if issue: #It's possible that a series won't have any local issues.
+                    series_cover = ImageGetter(id=issue.id, size=self.size, model=issue, imagetype='issue_cover')
+                    filepath = series_cover.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
+                    resized_cover = CBFile(source_path=filepath, dest_path=self.seriescoverpath, size=self.size)
+                else:
+                    return False
             elif self.imagetype is 'issue_cover':
                 filepath = self.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
                 resized_cover = CBFile(source_path=filepath, dest_path=self.issuecoverpath, size=self.size)
@@ -104,7 +104,7 @@ class ImageGetter(object):
         #app.logger.debug('filepath is', self.filepath)
         self.pages = self.list_extractor()
         self.pagenum = self.pagenum if self.pagenum < len(self.pages) else (len(self.pages) - 1)
-        self.comicextractor()
+        self.comic_extractor()
         result = self.readpath + sorted(self.pages)[int(self.pagenum)]
         return self.readpath + sorted(self.pages)[int(self.pagenum)]
 
@@ -138,32 +138,27 @@ class ImageGetter(object):
         return sorted(self.pages)
 
     def list_extractor(self):
-        extension = os.path.splitext(self.filepath)[1]
-        if extension == '.cbt':
-            archive = SBTar(self.filepath)
-            result = archive.listpages()
-        elif extension == '.cbr':
-            archive = SBRar(filename=self.filepath)
-            result = archive.listpages()
-        elif extension == '.cbz':
-            archive = SBZip(self.filepath)
-            result = archive.listpages()
-        else:
-            result = ''
+        archive = self.get_mimetype()
+        result = archive.listpages()
         #Zip at least leaves dirs in the list, this messes with successive operations.
         #Pull empty dirs out. Need to catch edge case where an archive contains more
         #than one comic - it'll still work but it would be an unordered mess.
         return result
 
-    def comicextractor(self):
-        result = ''
-        extension = os.path.splitext(self.filepath)[1]
-        if extension == '.cbt':
-            self.page = SBTar(filename=self.filepath, id=self.id)
-        elif extension == '.cbr':
-            self.page = SBRar(filename=self.filepath, id=self.id)
-        elif extension == '.cbz':
-            self.page = SBZip(filename=self.filepath, id=self.id)
+    def get_mimetype(self):
+        mimetype = magic.from_file(self.filepath, mime=True)
+        if mimetype == 'application/x-tar':
+            archive = SBTar(filename=self.filepath, id=self.id)
+        elif mimetype == 'application/x-rar':
+            archive = SBRar(filename=self.filepath, id=self.id)
+        elif mimetype == 'application/zip':
+            archive = SBZip(filename=self.filepath, id=self.id)
+        else:
+            archive = False
+        return archive
+
+    def comic_extractor(self):
+        self.page = self.get_mimetype()
         try:
             result = self.check_exists(self.page)
         except:

@@ -97,8 +97,9 @@ class Issue(Base, Serializer):
         issues=''
         diff=int(self.limit)*int(self.page)
         issues = db_session.query(Issue).limit(self.limit).offset(diff).all()
-        values=['name', 'description', 'id']
-        issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id])) for row in issues]
+        print(db_session.query(Issue).all())
+        values=['name', 'description', 'id', 'series_id']
+        issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id, row.series_id])) for row in issues]
         return issues
 
     def getserieslist(self):

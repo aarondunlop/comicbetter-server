@@ -72,6 +72,7 @@ class Series(Base):
         if not matching_series:
             matching_series = Series(name=self.name)
             db_session.add(matching_series)
+            db_session.flush()            
         return matching_series
 
     def getlist(self):
