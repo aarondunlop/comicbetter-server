@@ -37,28 +37,10 @@ class User(Base):
         for key, value in self.kwargs.items():
             newvalue=str(value[0]) if isinstance(value, list) else str(value)
             setattr(user, key, newvalue)
-        try:
-            db_session.add(user)
-            db_session.commit()
-            db_session.flush()
-        except:
-            db_session.rollback()
-            raise
         return 'ok'
 
     def update_password(self):
-        user = db_session.query(User).filter_by(username=self.username).first() or False
-        if not user:
-            user=User()
-        user.password=bcrypt.hashpw(self.password.encode('utf8'), bcrypt.gensalt())
-        try:
-            db_session.add(user)
-            db_session.commit()
-            db_session.flush()
-        except:
-            db_session.rollback()
-            raise
-        return 'ok'
+        self.password = bcrypt.hashpw(self.password.encode('utf8'), bcrypt.gensalt())
 
     def verify_password(self):
         user = db_session.query(User).filter_by(name=self.name).first() or False

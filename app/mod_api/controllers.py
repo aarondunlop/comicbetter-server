@@ -4,7 +4,7 @@ from flask import Blueprint, g, request, jsonify, send_file, abort, Response, ma
 from app import app
 from app.mod_lib.extractimages import ComicImageExtracter
 from app.models import Series, Issue, User # issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced,
-from app.models.database import db_session
+from app.models.database import db_session, init_db, reset_db
 from app.mod_lib import CBFile, CVFetch# , #scan_library_path, process_cv_get_series_cvid_by_id, process_cv_get_series_details_by_id, process_cv_get_issue_details_by_id, process_cv_get_issue_covers, process_cv_get_series_covers, get_series_covers
 from app.mod_comic import ImageGetter
 from app.mod_devices import SBDevices
@@ -24,6 +24,24 @@ from flask_jwt_extended import (
 )
 app.config['JWT_SECRET_KEY'] = SBConfig.get_jwt_secret()
 jwt = JWTManager(app)
+
+@mod_api.route('/init', methods=['POST'])
+def cb_init():
+    data = request
+    username = request.get_json()['username']
+    password = request.get_json()['password']
+    init_db()
+    user = User(name=username, password=password)
+    user.update_password()
+    db_session.add(user)
+    db_session.flush()
+    db_session.commit()
+    return jsonify('done')
+
+@mod_api.route('/reset', methods=['POST'])
+def cb_reset():
+    reset_db()
+    return jsonify('done')
 
 @mod_api.route('/password', methods=['POST'])
 def password_set(**kwargs):

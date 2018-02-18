@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from config import SBConfig
@@ -39,3 +39,6 @@ def init_db():
     import app.models.team
     import app.models.user
     Base.metadata.create_all(bind=engine)
+
+def reset_db():
+    Base.metadata.drop_all(bind=engine)
