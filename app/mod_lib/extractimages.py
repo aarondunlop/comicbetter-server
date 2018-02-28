@@ -7,9 +7,9 @@ import patoolib
 
 from app import app
 
-from app.mod_lib.parse_names import *
-#from app.models.main import *
-from app.models.issue import Issue
+from cbserver.mod_lib.parse_names import *
+#from cbserver.models.main import *
+from cbserver.models.issue import Issue
 import logging
 
 logger = logging.getLogger(__name__)
@@ -43,7 +43,7 @@ class ComicImageExtracter(object):
         '''
         filename = os.path.basename(self.path)
         #ext = os.path.splitext(filename)[1].lower()
-        comicroot = app.root_path + '/static/comics/' + str(self.id) + '/'
+        comicroot = cbserver.root_path + '/static/comics/' + str(self.id) + '/'
         comicpath = comicroot + filename
 
         # File validation

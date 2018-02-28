@@ -3,6 +3,8 @@ directories:
     images: /var/comicbetter/images
     read: /var/comicbetter/read
 
+fqdn: 'https://localhost/api'
+
 comicvine:
     apikey:
 
@@ -33,8 +35,8 @@ image_formats:
     width: 25
     height: 25
   thumb:
-    width: 50
-    height: 50
+    width: 102
+    height: 160
   tiny:
     width: 100
     height: 100

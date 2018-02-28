@@ -1,13 +1,20 @@
 from flask import Blueprint, g, request, jsonify, send_file, abort, Response, make_response, redirect, url_for
 
 # Import the database object from the main app module
-from app import app
-from app.mod_lib.extractimages import ComicImageExtracter
-from app.models import Series, Issue, User # issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced,
-from app.models.database import db_session, init_db, reset_db
-from app.mod_lib import CBFile, CVFetch# , #scan_library_path, process_cv_get_series_cvid_by_id, process_cv_get_series_details_by_id, process_cv_get_issue_details_by_id, process_cv_get_issue_covers, process_cv_get_series_covers, get_series_covers
-from app.mod_comic import ImageGetter
-from app.mod_devices import SBDevices
+from cbserver import cbserver, long_task
+from cbserver.mod_lib.extractimages import ComicImageExtracter
+from cbserver.models import Series, Issue, User # issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced,
+from cbserver.models.database import db_session, init_db, reset_db
+from cbserver.mod_lib.cbfile import CBFile
+from cbserver.mod_lib.cvfetch import CVFetch
+from cbserver.mod_lib.cbcache import CBCache
+from cbserver.mod_lib import CBLibrary
+import time
+
+from cbserver.cbserver.tasks import mytask
+
+from cbserver.mod_comic import ImageGetter
+from cbserver.mod_devices import SBDevices
 import json
 import io
 from config import SBConfig
@@ -22,8 +29,49 @@ from flask_jwt_extended import (
     get_jwt_identity, jwt_refresh_token_required,
     create_refresh_token
 )
-app.config['JWT_SECRET_KEY'] = SBConfig.get_jwt_secret()
+cbserver.config['JWT_SECRET_KEY'] = SBConfig.get_jwt_secret()
 jwt = JWTManager(app)
+
+@cbserver.route('/getfqdn', methods=['GET'])
+def get_servername():
+    fqdn = SBConfig.get_fqdn()
+    return fqdn
+
+@cbserver.route('/longtask', methods=['POST'])
+def longtask():
+    task = long_task.apply_async()
+    print(task)
+    return jsonify({}), 302, {'Location': url_for('taskstatus',
+                                                  task_id=task)}
+@cbserver.route('/status/<task_id>')
+def taskstatus(task_id):
+    task = long_task.AsyncResult(task_id)
+    if task.state == 'PENDING':
+        response = {
+            'state': task.state,
+            'current': 0,
+            'total': 1,
+            'status': 'Pending...'
+        }
+    elif task.state != 'FAILURE':
+        response = {
+            'state': task.state,
+            'current': task.info.get('current', 0),
+            'total': task.info.get('total', 1),
+            'status': task.info.get('status', '')
+        }
+        if 'result' in task.info:
+            response['result'] = task.info['result']
+    else:
+        # something went wrong in the background job
+        response = {
+            'state': task.state,
+            'current': 1,
+            'total': 1,
+            'status': str(task.info),  # this is the exception raised
+        }
+    return jsonify(response)
+
 
 @mod_api.route('/init', methods=['POST'])
 def cb_init():
@@ -37,6 +85,11 @@ def cb_init():
     db_session.flush()
     db_session.commit()
     return jsonify('done')
+
+@mod_api.route('/cache/reset', methods=['POST'])
+def clear_cache():
+    response = CBCache().nuke()
+    return jsonify(response)
 
 @mod_api.route('/reset', methods=['POST'])
 def cb_reset():
@@ -118,25 +171,6 @@ def api_series_return_covers(id):
             return 'ok'
             abort(500)
 
-#@mod_api.route('/series/cover/<int:id>', methods=['GET', 'POST'])
-#@jwt_required
-#def api_series_return_covers(id):
-    #app.logger.info(id)
-    #if request.method == 'GET' and request.args.get('size'):
-#        covers = ImageGetter(id=id, size=request.args.get('size'))#
-        #file = covers.get_series_cover()
-        #app.logger.info('ok')
-        #app.logger.info(file)
-        #if file:
-    #        return send_file(file)
-#        else:
-            #abort(404)
-
-    if request.method == 'GET' and not request.args.get('size'):
-        covers = ImageGetter(id=id)
-        coverlist = covers.list_issue_covers()
-        return jsonify(coverlist)
-
 @mod_api.route('/error_text', methods=['GET', 'POST'])
 #@jwt_required
 def api_error_text():
@@ -152,8 +186,8 @@ def api_error_text():
 def mod_issues_list_by_series(id):
     issues=Issue(limit = request.args.get('limit', 2500), page=request.args.get('page', 0), series_id=id)
     if request.method == 'GET':
-        values=['name', 'description', 'id']
-        issuesjson = [dict(list(zip(values, [row.name, row.description if row.name and row.description else None, row.id]))) for row in issues.getserieslist()]
+        values=['name', 'description', 'id', 'number']
+        issuesjson = [dict(list(zip(values, [row.name, row.description if row.name and row.description else None, row.id, row.number]))) for row in issues.getserieslist()]
         return jsonify(issuesjson)
     if request.method == 'GET':
 
@@ -204,6 +238,16 @@ def mod_issue_images(id):
             return jsonify('ok')
     return 'ok'
 
+@mod_api.route('/cv/search/series', methods=['POST'])
+#@jwt_required
+def mod_cv_find_series():
+    cvid = request.args.get('cvid') if request.args.get('cvid') else None
+    print(request.data)
+    name = request.get_json()['name'] if request.get_json()['name'] else None
+    if request.method == 'POST':
+        series = CVFetch(cvid=cvid, name=name).process_cv_get_series_by_name()
+    return jsonify(series)
+
 @mod_api.route('/cv/issue/covers/<int:id>', methods=['GET', 'POST'])
 #@jwt_required
 def mod_cv_get_issue_covers(id):
@@ -212,13 +256,42 @@ def mod_cv_get_issue_covers(id):
         result = comic.fetch_cv_covers()
     return jsonify('done')
 
-@mod_api.route('/cv/series/covers/<int:id>', methods=['GET', 'POST'])
+@mod_api.route('/cv/series/covers/<int:id>', methods=['GET', 'POST']) #Used to grab covers for local series.
 #@jwt_required
 def mod_cv_get_series_covers(id):
     if request.method == 'POST' or request.method == 'GET':
         comic = ImageGetter(id=id, imagetype='series_cover', size=request.args.get('size'))
         result = comic.fetch_cv_covers()
         return 'ok'
+
+@mod_api.route('/cv/series', methods=['GET'])
+#@jwt_required
+def mod_get_cv_series_by_cvid():
+    cvid = request.args.get('cvid') if request.args.get('cvid') else None
+    if request.method == 'GET':
+        series = CVFetch(cvid=cvid).fetch_cv_series_record()
+        #db_session.commit()
+         #jsonify(process_cv_get_series_details_by_id(series_id, cvid))
+        return jsonify(series)
+
+@mod_api.route('/cv/series/covers', methods=['GET']) #Used to grab covers for remote series - used in series matching.
+#@jwt_required
+def mod_get_cover_by_cvid():
+    cvid = request.args.get('cvid') if request.args.get('cvid') else None
+    if request.method == 'GET':
+        file = CVFetch(cvid=cvid).fetch_cv_series_cover_by_cvid()
+        try:
+            if file:
+                return send_file(
+                    file,
+                )
+            else:
+                error_text = 'File could not be extracted. Review logs.'
+                error_status = 404
+                return redirect(url_for('api.api_error_text'))
+        except:
+            return 'ok'
+            abort(500)
 
 @mod_api.route('/issues', methods=['GET', 'POST'])
 #@jwt_required
@@ -237,9 +310,13 @@ def mod_issue_list():
 @mod_api.route('/cv/issue/<int:issue_id>', methods=['GET', 'POST'])
 #@jwt_required
 def mod_scan_library_cv_issue_cvid(issue_id):
+    cvid = request.args.get('cvid') if request.args.get('cvid') else None
+    #if cvid == None:
+    #    return jsonify('Ensure the series has a CVID set.')
     if request.method == 'POST':
         issue = db_session.query(Issue).filter(Issue.id==issue_id).first()
         issue.cvid = issue.series.cvid
+        print(issue.cvid)
         issue = CVFetch(model=issue, imagetype='issue_cover').fetch_record()
         return jsonify('done')
 
@@ -259,27 +336,38 @@ def mod_scan_library_cv_series_cvid(series_id):
 #@jwt_required
 def mod_scan_library_files():
     if request.method == 'GET':
-        lib = CVFetch()
-        result = lib.scan_library_path()
+        result = CBLibrary().import_library_files()
         return 'done'
     return jsonify('Make sure method is GET')
 
-#This sets the series ID + other factors. Tag cvid=x in the URI.
-#This needs *heavy* sanitization, or a complete rework. Passing params straight into DB???
+#Ensure cvid is set.
 @mod_api.route('/series/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required
 def mod_series_update_by_id(series_id):
     if request.method == 'POST':
-        series = db_session.query(Series).filter(Series.id==series_id).first()
-        if series is not None:
-            series
-        else:
-            series = Series()
-        for key, value in request.args.items():
-            newvalue=value[0] if isinstance(value, list) else value
-            setattr(series, key, newvalue)
+        cvid = int(request.args.get('cvid'))
+        print(cvid)
+        series = Series(cvid=cvid, id=series_id).update_or_create()
         db_session.commit()
-        return jsonify('fix_me')
+        db_session.flush()
+        print(series.cvid)
+        return jsonify(series.id)
+    if request.method == 'GET':
+        series = Series(id=series_id).get_json_by_id()
+        return jsonify(series)
+
+@mod_api.route('/series/issues/<int:series_id>', methods=['GET', 'POST'])
+#@jwt_required
+def mod_series_manage_issues(series_id):
+    if request.method == 'POST':
+        cvid = request.args.get('cvid') if request.args.get('cvid') else None
+        series = db_session.query(Series).filter_by(id = series_id).first()
+        for issue in series.issues:
+            record = CVFetch(model=issue, imagetype='issue_cover').fetch_record()
+        db_session.commit()
+        db_session.flush()
+
+        return jsonify('done')
     if request.method == 'GET':
         series = Series(id=series_id).get_json_by_id()
         return jsonify(series)
@@ -314,12 +402,12 @@ def mod_issues_update_by_id(issue_id):
 
 #The stuff below might work, but hasn't been tested and may not be needed.
 
-
 ##@jwt_required
 @mod_api.route('/process/library/identify/series/<int:series_id>', methods=['GET', 'POST'])
 def mod_scan_library_cv_identify_series(series_id):
     if request.method == 'POST':
-        response = jsonify(process_cv_get_series_cvid_by_id(series_id))
+        series = CVFetch(id = series_id).process_cv_get_series_cvid_by_id()
+        response = jsonify(series)
         return response
 
 @mod_api.route('/process/issue/<int:issue_id>', methods=['GET', 'POST'])
@@ -327,22 +415,6 @@ def mod_scan_library_cv_identify_series(series_id):
 def mod_process_issue_by_id(issue_id):
     if request.method == 'GET':
         return jsonify(process_issue_by_id(issue_id))
-
-@mod_api.route('/process/series/issue/<int:issue_id>', methods=['GET', 'POST'])
-#@jwt_required
-def mod_process_issue_series(issue_id):
-    if request.method == 'GET':
-        force = False
-        if request.args.get('force'):
-            force = True if request.args.get('force').lower() == 'true' else False
-        return jsonify(process_series_by_issue_id(issue_id, force))
-
-#@mod_api.route('/process/library/cv/series/cvid/<int:series_id>', methods=['GET', 'POST'])
-#def mod_scan_library_cv_series(series_id):#
-    #if request.method == 'POST':
-        #return jsonify(process_cv_get_series_cvid_by_id(series_id, cvid))
-#        series = Series(cvid=cvid, id=series_id)#
-        #return jsonify(process_cv_get_issue_details_by_id(series_id, cvid))
 
 @mod_api.route('/devices/', methods=['GET', 'POST'])
 #@jwt_required

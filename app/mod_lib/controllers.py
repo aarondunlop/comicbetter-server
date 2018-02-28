@@ -10,20 +10,20 @@ from sqlalchemy.ext.declarative import declarative_base
 # Import the database object from the main app module
 from app import db, app
 
-from app.mod_lib import libconf, libfolder
+from cbserver.mod_lib import libconf, libfolder
 
 # Import module forms
-from app.mod_lib.forms import *
-from app.mod_lib.extractimages import ComicImageExtracter
+from cbserver.mod_lib.forms import *
+from cbserver.mod_lib.extractimages import ComicImageExtracter
 
 # Import utils
-from app.mod_lib.parse_names.util import scancomics
+from cbserver.mod_lib.parse_names.util import scancomics
 
 # Import module models (i.e. User)
-#from app.mod_lib.models import *
+#from cbserver.mod_lib.models import *
 
-from app.mod_lib.parse_names.comicimporter import MetadataImporter
-from app.mod_lib.parse_names.fnameparser import extract as extractname
+from cbserver.mod_lib.parse_names.comicimporter import MetadataImporter
+from cbserver.mod_lib.parse_names.fnameparser import extract as extractname
 
 import json
 import logging
@@ -31,16 +31,16 @@ import logging
 logger = logging.getLogger(__name__)
 
 mako = MakoTemplates(app)
-app.config['MAKO_PREPROCESSOR'] = preprocessor
+cbserver.config['MAKO_PREPROCESSOR'] = preprocessor
 
-# Define the blueprint: 'auth', set its url prefix: app.url/auth
+# Define the blueprint: 'auth', set its url prefix: cbserver.url/auth
 mod_lib = Blueprint('lib', __name__, url_prefix='/lib')
 
 # Set the route and accepted methods
 @mod_lib.route('/comic/info/<int:id>', methods=['GET', 'POST'])
 def comicinfo(id):
     comicquery = db.session.query(Issue).filter_by(id=id).first()
-    return render_template('lib/info.mako', issue=comicquery, app_name=app.config['SITE_NAME'])
+    return render_template('lib/info.mako', issue=comicquery, app_name=cbserver.config['SITE_NAME'])
 
 # Set the route and accepted methods
 @mod_lib.route('/comic/list', methods=['GET', 'POST'])
@@ -62,8 +62,8 @@ def comiclist():
         #comicdict=extractname(str(comic.name))
         #importer.import_comic_files(comic.name, issue_series, issue_number, issue_year)
         #importer.import_issue_files(issuedict[0], issuedict[1], issuedict[2])
-    return render_template('lib/list.mako', issues=comics, app_name=app.config['SITE_NAME'])
-    #return render_template('lib/list.mako', app_name=app.config['SITE_NAME'])
+    return render_template('lib/list.mako', issues=comics, app_name=cbserver.config['SITE_NAME'])
+    #return render_template('lib/list.mako', app_name=cbserver.config['SITE_NAME'])
 
 # Set the route and accepted methods
 @mod_lib.route('/parse/full', methods=['GET', 'POST'])
@@ -72,7 +72,7 @@ def mod_lib_parse_full():
     for comic in comics:
         importer = MetadataImporter()
         importer.import_comic_files(comic.id, 'full')
-    #return render_template('lib/scan.mako', app_name=app.config['SITE_NAME'])
+    #return render_template('lib/scan.mako', app_name=cbserver.config['SITE_NAME'])
     return redirect(url_for('lib.comiclist'))
     #return redirect(url_for('lib.comicnames'))
 
@@ -84,7 +84,7 @@ def mod_lib_issue_cvid():
         #comic = db.session.query(Issue.filter_by(id=id).first()
         #importer = MetadataImporter()
         #importer.find_issue_id(id)
-        #return render_template('lib/scan.mako', app_name=app.config['SITE_NAME'])
+        #return render_template('lib/scan.mako', app_name=cbserver.config['SITE_NAME'])
         #return redirect(url_for('lib.comiclist'))
         #return redirect(url_for('lib.comicnames'))
     #if request.method == 'POST':
@@ -105,14 +105,14 @@ def mod_lib_get_series_id():
     if request.method == 'GET' and id:
         result = importer.find_series_matches(id=id)
         #newresult = importer.set_series_cvid(id, result
-        #return render_template('lib/scan.mako', app_name=app.config['SITE_NAME'])
+        #return render_template('lib/scan.mako', app_name=cbserver.config['SITE_NAME'])
         #return redirect(url_for('lib.comiclist'))
         #return redirect(url_for('lib.comicnames'))
     if request.method == 'POST':
         #result = importer.set_series_cvid(id, series_cvid)
         #return redirect(url_for('lib.comiclist'))
-    #return render_template('lib/seriesmatch.mako', comics=result, id=id, app_name=app.config['SITE_NAME'])
-    #return render_template('lib/seriesmatch.mako', comics=result, id=id, app_name=app.config['SITE_NAME'])
+    #return render_template('lib/seriesmatch.mako', comics=result, id=id, app_name=cbserver.config['SITE_NAME'])
+    #return render_template('lib/seriesmatch.mako', comics=result, id=id, app_name=cbserver.config['SITE_NAME'])
     return jsonify(result)
 
 # Set the route and accepted methods
@@ -137,14 +137,14 @@ def mod_lib_parse_scan():
         scancomics(folder)
         #comic = ComicImageExtracter(comicpath=folder, comicname=comicname)
         #comic.extract_comic()
-    #return render_template('lib/scan.mako', app_name=app.config['SITE_NAME'])
+    #return render_template('lib/scan.mako', app_name=cbserver.config['SITE_NAME'])
     return redirect(url_for('lib.comiclist'))
 
 # Set the route and accepted methods
 @mod_lib.route('/image/cover/<int:id>', methods=['GET', 'POST'])
 def mod_lib_get_covers(id):
     #if request.args.get('url'):
-        
+
     if request.method == 'GET':
         issue = db.session.query(Issue).filter_by(id=id).first()
         importer = MetadataImporter()
@@ -154,7 +154,7 @@ def mod_lib_get_covers(id):
     #elif request.method == 'POST':
     #    issue = db.session.query(Issue).filter_by(id=id).first()
 
-    #return render_template('lib/image.mako', issue=issue, app_name=app.config['SITE_NAME'])
+    #return render_template('lib/image.mako', issue=issue, app_name=cbserver.config['SITE_NAME'])
     return redirect(url_for('lib.comiclist'))
 
 # Set the route and accepted methods
@@ -166,7 +166,7 @@ def mod_lib_cvscan():
     for comic in comics:
         importer = MetadataImporter()
         importer.import_comic_files(comic, 'cv')
-    return render_template('lib/scan.mako', app_name=app.config['SITE_NAME'])
+    return render_template('lib/scan.mako', app_name=cbserver.config['SITE_NAME'])
     #return redirect(url_for('lib.comicnames'))
 
 # Set the route and accepted methods
@@ -184,7 +184,7 @@ def mod_lib_match():
     form.year.choices = matches
     form.issue.choices = matches
     #try:
-    return render_template('lib/match.mako', app_name=app.config['SITE_NAME'], form=form, match=match)
+    return render_template('lib/match.mako', app_name=cbserver.config['SITE_NAME'], form=form, match=match)
     #except:
     #    return redirect(url_for('base.mod_lib_match'))
 
@@ -194,8 +194,8 @@ def mod_lib_config():
     form = ConfigLibraryForm(request.form)
     if request.method == 'GET':
         form.librarypath.data=libconf['library']['path']
-        return render_template('lib/config.mako', app_name=app.config['SITE_NAME'], form=form)
+        return render_template('lib/config.mako', app_name=cbserver.config['SITE_NAME'], form=form)
     if request.method == 'POST':# and form.validate():
         libconf['library']['path']=str(form.librarypath.data)
         updateconf(libconf)
-    return render_template('lib/config.mako', app_name=app.config['SITE_NAME'], form=form)
+    return render_template('lib/config.mako', app_name=cbserver.config['SITE_NAME'], form=form)

@@ -27,17 +27,17 @@ def init_db():
     # import all modules here that might define models so that
     # they will be registered properly on the metadata.  Otherwise
     # you will have to import them first before calling init_db()
-    import app.models.arc
-    import app.models.character
-    import app.models.creator
-    import app.models.comicpages
-    import app.models.device
-    import app.models.issue
-    import app.models.publisher
-    import app.models.series
-    import app.models.settings
-    import app.models.team
-    import app.models.user
+    import cbserver.models.arc
+    import cbserver.models.character
+    import cbserver.models.creator
+    import cbserver.models.comicpages
+    import cbserver.models.device
+    import cbserver.models.issue
+    import cbserver.models.publisher
+    import cbserver.models.series
+    import cbserver.models.settings
+    import cbserver.models.team
+    import cbserver.models.user
     Base.metadata.create_all(bind=engine)
 
 def reset_db():

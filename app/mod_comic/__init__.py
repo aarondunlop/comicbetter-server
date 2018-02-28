@@ -7,11 +7,11 @@ from .zip import SBZip
 
 import magic
 
-from app.models import Issue #, issue_get_file
-from app.models import Series #, series_get_file
+from cbserver.models import Issue #, issue_get_file
+from cbserver.models import Series #, series_get_file
 
-from app.models.database import db_session
-from app.mod_lib import CBFile, CVFetch
+from cbserver.models.database import db_session
+from cbserver.mod_lib import CBFile, CVFetch
 
 import logging
 logger = logging.getLogger(__name__)
@@ -101,7 +101,7 @@ class ImageGetter(object):
         CBFile(dest_path=self.readpath).make_dest_path() #Make sure dir exists.
         issue = Issue(id=self.id).find_by_id()
         self.filepath=issue.filepath
-        #app.logger.debug('filepath is', self.filepath)
+        #cbserver.logger.debug('filepath is', self.filepath)
         self.pages = self.list_extractor()
         self.pagenum = self.pagenum if self.pagenum < len(self.pages) else (len(self.pages) - 1)
         self.comic_extractor()

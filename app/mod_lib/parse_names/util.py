@@ -18,7 +18,7 @@ import yaml
 import re
 
 from os import walk
-from app.models import Issue
+from cbserver.models import Issue
 
 # unmodifiable cache for speeding up calls to natural_compare
 __keys_cache = None

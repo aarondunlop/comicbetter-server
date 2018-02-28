@@ -1,7 +1,7 @@
 # Import the database object (db) from the main application module
 # We will define this inside /app/__init__.py in the next sections.
 
-from app.models.database import Base, db_session
+from cbserver.models.database import Base, db_session
 from datetime import datetime
 from sqlalchemy import Table, Column, Integer, ForeignKey, String
 from sqlalchemy.orm import relationship, backref
@@ -12,7 +12,7 @@ class Series(Base):
     id = Column(Integer, primary_key=True)
     #issues = relationship("Issue", secondary=issueseries,back_populates="series")
     issues = relationship("Issue", back_populates="series")
-    cvid = Column(String(15))
+    cvid = Column(Integer)
     cvurl = Column(String(200))
     image_small = Column(String(200))
     image_large = Column(String(200))
@@ -72,22 +72,23 @@ class Series(Base):
         if not matching_series:
             matching_series = Series(name=self.name)
             db_session.add(matching_series)
-            db_session.flush()            
+            db_session.flush()
         return matching_series
 
     def getlist(self):
         series=''
         diff=int(self.limit)*int(self.page)
         series = db_session.query(Series).limit(self.limit).offset(diff).all()
-        values=['name', 'description', 'id']
-        series = [dict(list(zip(values, [row.name, row.description if row.name and row.description else None, row.id]))) for row in series]
+        values=['name', 'description', 'id', 'year']
+        series = [dict(list(zip(values, [row.name, row.description if row.name and row.description else None, row.id, row.year]))) for row in series]
         return series
 
     def update_or_create(self):
         series = db_session.query(Series).filter_by(id=self.id).first() or False
         if not series:
-            series = Series(id=series_id)
-        for key, value in kwargs.items():
+            series = Series(id=self.id)
+            db_session.add(series)
+        for key, value in self.kwargs.items():
             newvalue=value[0] if isinstance(value, list) else value
             setattr(series, key, newvalue)
-        return 'ok'
+        return series

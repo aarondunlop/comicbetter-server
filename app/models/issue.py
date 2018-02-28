@@ -1,6 +1,6 @@
 # Import the database object (db) from the main application module
 # We will define this inside /app/__init__.py in the next sections.
-from app.models.database import Base, db_session
+from cbserver.models.database import Base, db_session
 from datetime import datetime
 
 from sqlalchemy import Table, Column, Integer, ForeignKey, String, DateTime
@@ -153,7 +153,6 @@ class Issue(Base, Serializer):
             newvalue=str(value[0]) if isinstance(value, list) else str(value)
             setattr(issue, key, newvalue)
         return issue
-
 
     def match_or_save(self):
         matching_issue = db_session.query(Issue).filter_by(name=self.issue_name).first()

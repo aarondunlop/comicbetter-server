@@ -1,4 +1,4 @@
-from app.models import Issue, Device
+from cbserver.models import Issue, Device
 import logging
 logger = logging.getLogger(__name__)
 

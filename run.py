@@ -1,6 +1,6 @@
 # Run a test server.
 import logging
-from app import app
+from app import cbserver
 from logging.handlers import RotatingFileHandler
 
 if __name__ == '__main__':
@@ -9,9 +9,9 @@ if __name__ == '__main__':
     handler = RotatingFileHandler('/var/log/comicbetter/server.log', maxBytes=10000000, backupCount=5)
     handler.setLevel(logging.DEBUG)
     handler.setFormatter(formatter)
-    app.logger.setLevel(logging.DEBUG)
-    app.logger.addHandler(handler)
+    cbserver.logger.setLevel(logging.DEBUG)
+    cbserver.logger.addHandler(handler)
     log = logging.getLogger('werkzeug')
     log.setLevel(logging.DEBUG)
     log.addHandler(handler)
-    app.run(host='0.0.0.0', port=58008, debug=True)
+    cbserver.run(host='0.0.0.0', port=58008, debug=True)

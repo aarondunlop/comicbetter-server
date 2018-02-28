@@ -8,7 +8,7 @@ from cachecontrol.heuristics import ExpiresAfter
 from requests_toolbelt.utils import dump
 from config import SBConfig
 
-from app.models import Arc, Character, Creator, Team, Publisher, Series, Issue, Settings
+from cbserver.models import Arc, Character, Creator, Team, Publisher, Series, Issue, Settings
 #from .comicfilehandler import ComicFileHandler
 #from . import fnameparser, util
 
@@ -97,37 +97,68 @@ class CVWrapper(object):
             #db.session.commit()
             return response
 
-    def find_series_matches(self, series):
+    def find_series_matches(self):
         query_params = self.base_params
         query_params['resources'] = 'volume'
-        query_params['field_list'] = 'id,name,start_year,api_detail_url,description' #self.query_series_fields
-        query_params['filter'] = 'name:' + series.name
-        query_response = self._query_cv((self.baseurl + 'volumes'), query_params)
-        row = []
-        return query_response
+        #query_params['field_list'] = 'id,name,start_year,api_detail_url,description' #self.query_series_fields
+        query_params['filter'] = 'name:' + self.name
+        response = self._query_cv((self.baseurl + 'volumes'), query_params)
+        self.query_response = response['results']
+        self.get_descriptions()
+        return self.query_response
 
     def get_series_details(self):
         query_params = self.base_params
         query_params['resources'] = 'volume'
         query_params['field_list'] = 'deck,description,image,name,publisher,api_detail_url'
-        query_response = self._query_cv((self.baseurl + 'volume/4050-' + self.model.cvid), query_params)
-        query_response['results']['description'] = self.get_p(query_response['results']['description'])
-        print(query_response)
-        return query_response['results']
+        response = self._query_cv((self.baseurl + 'volume/4050-' + self.cvid), query_params)
+        self.query_response = response['results']
+        print(self.query_response)
+        self.get_description(self.query_response)
+        #print(query_response)
+        #description = query_response['results']['description']
+        #print(description)
+        #if description is not None:
+        #    query_response['results']['description'] = self.get_p(query_response['results']['description'])
+        return self.query_response
 
     def get_issue_details(self):
         query_params = self.base_params
         query_params['resources'] = ''
         query_params['field_list'] = 'cover_date,description,image,name,aliases'
-        query_response = self._query_cv((self.baseurl + 'issue/4000-' + str(self.model.cvid)), query_params)
-        query_response['results']['description'] = self.get_p(query_response['results']['description'])
-        return query_response['results']
+        response = self._query_cv((self.baseurl + 'issue/4000-' + str(self.cvid)), query_params)
+        self.query_response = response['results']
+        self.get_description(self.query_response)
+        #self.query = query_response['results']['description']
+        #if description:
+        #    query_response['results']['description'] = self.get_p(query_response['results']['description'])
+        return self.query_response
+
+    def get_description(self, record): #Used to get a single result's descriptions.
+        text = record['description']
+        if text is not None:
+            soup = BeautifulSoup(text, 'html.parser')
+            text = soup.find('p')
+        if text is not None:
+            text = text.get_text()
+            record['description'] = UnicodeDammit(soup.find('p').text, ["windows-1252"], smart_quotes_to="html").unicode_markup #10,000 deaths to anyone who uses smart quotes.
+        return record
+
+    def get_descriptions(self): #Used to get a list of result's descriptions.
+        results = [self.get_description(record) for record in self.query_response]
+        self.query_response = results
 
     @classmethod
-    def get_p(self, query):
-        text = BeautifulSoup(query, 'html.parser')
-        processed_text = UnicodeDammit(text.p.get_text(), ["windows-1252"], smart_quotes_to="html").unicode_markup #10,000 deaths to anyone who uses smart quotes.
-        return processed_text #Grab the contents between <p></p>, strip HTML tags.
+    def get_p(self):
+        #print(query)
+        try:
+            text = self.query_response['results']['description']
+            soup = BeautifulSoup(text, 'html.parser')
+            text = soup.find('p').text
+            self.query_response['results']['description'] = UnicodeDammit(soup.find('p').text, ["windows-1252"], smart_quotes_to="html").unicode_markup #10,000 deaths to anyone who uses smart quotes.
+            return self.query_response['results']['description']
+        except:
+            return None
 
     def _query_cv(self, query_url, query_params):
         response = sess.get(
