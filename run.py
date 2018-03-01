@@ -1,6 +1,6 @@
 # Run a test server.
 import logging
-from app import cbserver
+from cbserver import cbserver
 from logging.handlers import RotatingFileHandler
 
 if __name__ == '__main__':
