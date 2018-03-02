@@ -75,14 +75,11 @@ class ImageGetter(object):
                     series_cover = ImageGetter(id=issue.id, size=self.size, model=issue, imagetype='issue_cover')
                     filepath = series_cover.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
                     resized_cover = CBFile(source_path=filepath, dest_path=self.seriescoverpath, size=self.size)
-                    print(filepath, self.seriescoverpath, self.size)
-
                 else:
                     return False
             elif self.imagetype is 'issue_cover':
                 filepath = self.extract_issue_cover() #This checks to make sure it doesn't exist first, returns path.
                 resized_cover = CBFile(source_path=filepath, dest_path=self.issuecoverpath, size=self.size)
-                print(filepath, self.issuecoverpath, self.size)
             resized_cover.get_resized_filename() #just getting filename.
             thumbnail = resized_cover.copy_and_resize() #Saving file.
 
@@ -143,7 +140,6 @@ class ImageGetter(object):
     def list_extractor(self):
         archive = self.get_mimetype()
         result = archive.listpages()
-        print(result)
         #Zip at least leaves dirs in the list, this messes with successive operations.
         #Pull empty dirs out. Need to catch edge case where an archive contains more
         #than one comic - it'll still work but it would be an unordered mess.

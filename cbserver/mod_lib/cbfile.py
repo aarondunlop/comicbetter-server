@@ -86,7 +86,6 @@ class CBFile(object):
     def copy_and_resize(self):
         dest_filename = self.get_resized_filename()
         dimensions=(self.image_sizes[self.size]['width'], self.image_sizes[self.size]['height'])
-        print(dimensions)
         self.make_dest_path()
         try:
             im = Image.open(self.source_path)
@@ -98,7 +97,6 @@ class CBFile(object):
             pass
 
     def get_resized_filename(self):
-        print(self.source_path)
         fileext = PurePosixPath(self.source_path).suffix
         filename = (str(PurePosixPath(self.source_path).stem) + '_' + str(self.size))
         dest_file = self.dest_path + filename + fileext

@@ -6,7 +6,8 @@ import random
 from sqlalchemy import create_engine
 import time
 
-from celery import Celery
+from cbserver.celery import make_celery
+#from cbserver.tasks import *
 
 # Import SQLAlchemy
 from flask_sqlalchemy import SQLAlchemy
@@ -30,13 +31,12 @@ cbserver.config.setdefault('WEBPACK_MANIFEST_PATH', './build/manifest.json')
 # Define the database object which is imported
 # by modules and controllers
 
+cbserver.config.update(
+    CELERY_BROKER_URL='redis://localhost:6379/0',
+    CELERY_RESULT_BACKEND='redis://localhost:6379/0'
+)
 
-#Celery configs
-cbserver.config['CELERY_BROKER_URL'] = 'redis://localhost:6379/0'
-cbserver.config['CELERY_RESULT_BACKEND'] = 'redis://localhost:6379/0'
-
-celery = Celery(cbserver.name, broker=cbserver.config['CELERY_BROKER_URL'])
-celery.conf.update(cbserver.config)
+celery = make_celery(cbserver)
 
 @cbserver.before_request
 def create_session():
@@ -85,7 +85,7 @@ def handle_bad_request(e):
 #from cbserver.mod_lib.controllers import mod_lib as lib_module
 #from cbserver.mod_comic.controllers import mod_comic as comic_module
 from cbserver.mod_api.controllers import mod_api as api_module
-
+#from cbserver.tasks import tasks as tasks
 # Register blueprint(s)
 #cbserver.register_blueprint(auth_module)
 #cbserver.register_blueprint(lib_module)
@@ -93,6 +93,7 @@ cbserver.register_blueprint(api_module)
 #cbserver.register_blueprint(comic_module)
 # cbserver.register_blueprint(xyz_module)
 # ..
+#cbserver.register_blueprint(tasks)
 
 # Build the database:
 # This will create the database file using SQLAlchemy

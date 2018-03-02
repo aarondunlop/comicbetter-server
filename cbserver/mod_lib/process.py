@@ -29,7 +29,6 @@ class CVWrapper(object):
 
     def scan_library_path(self):
         comicfilelist = [(os.path.basename(entry.path), entry.path) for entry in self.scantree(libfolder)]
-        print(comicfilelist)
         for filename, filepath in comicfilelist:
             series, extracted = self.process_series_by_filename(filename)
             issue=Issue(filename=filename, filepath=filepath, number=extracted[1])

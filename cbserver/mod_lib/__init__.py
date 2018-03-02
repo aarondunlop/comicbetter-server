@@ -36,27 +36,11 @@ class CBLibrary(object):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def import_library_files(self):
-        comicfilelist = [(os.path.basename(entry.path), entry.path) for entry in self.scantree(libfolder)]
-        for self.filename, self.filepath in natsorted(comicfilelist, alg=ns.IGNORECASE):
-            series, extracted = self.process_series_by_filename()
-            print(self.filepath, self.filename, extracted, extracted[1])
-            print(extracted[0], extracted[1], extracted[2])
-            issue=Issue(filename=self.filename, filepath=self.filepath, number=extracted[1], year=extracted[2])
-            issue=issue.update_or_create()
-            series.issues.append(issue)
-            print(issue.name, issue.number, issue.id)
-            db_session.flush()
-
-        db_session.commit()
-        db_session.flush()
-        return 'comicfilelist'
-
     def scantree(self, path):
         extensions = ['.cbr', '.cbt', '.cbz']
         for entry in os.scandir(path):
-            print(entry)
             if not entry.name.startswith('.') and entry.is_dir(follow_symlinks=False):
+                self.path=entry.path
                 yield from self.scantree(entry.path)
             else:
               ext = os.path.splitext(entry.name)[-1].lower()
@@ -76,15 +60,12 @@ class CBLibrary(object):
         return series, extracted
 
     def import_library_files(self):
-        comicfilelist = [(os.path.basename(entry.path), entry.path) for entry in self.scantree(libfolder)]
+        comicfilelist = [(os.path.basename(entry.path), entry.path) for entry in self.scantree()]
         for self.filename, self.filepath in natsorted(comicfilelist, alg=ns.IGNORECASE):
             series, extracted = self.process_series_by_filename()
-            print(self.filepath, self.filename, extracted, extracted[1])
-            print(extracted[0], extracted[1], extracted[2])
             issue=Issue(filename=self.filename, filepath=self.filepath, number=extracted[1], year=extracted[2])
             issue=issue.update_or_create()
             series.issues.append(issue)
-            print(issue.name, issue.number, issue.id)
             db_session.flush()
 
         db_session.commit()

@@ -3,7 +3,7 @@ from flask import Blueprint, g, request, jsonify, send_file, abort, Response, ma
 # Import the database object from the main app module
 from cbserver import cbserver
 
-from cbserver.mod_lib.tasks import CoverTasks, LibraryTasks
+from cbserver.tasks import import_library_files, CoverTasks, LibraryTasks
 #from cbserver.mod_lib.tasks import long_task
 from cbserver.mod_lib.extractimages import ComicImageExtracter
 from cbserver.models import Series, Issue, User # issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced,
@@ -71,10 +71,43 @@ def extract_all_covers():
 @mod_api.route('/library/import', methods=['GET', 'POST'])
 #@jwt_required
 def mod_scan_library_files():
+    if request.method == 'POST':
+        task = import_library_files.apply_async()
+        return jsonify({}), 202, {'Location': url_for('api.mod_library_scan_status',
+                                              task_id=task.id)}
+
+@mod_api.route('/library/import/<task_id>', methods=['GET'])
+#@jwt_required
+def mod_library_scan_status(task_id):
     if request.method == 'GET':
-        result = LibraryTasks().import_library_files()
-        return 'done'
-    return jsonify('Make sure method is GET')
+        task = import_library_files.AsyncResult(task_id)
+        response={}
+        if task.state == 'PENDING':
+            # job did not start yet
+            response = {
+                'state': task.state,
+                'current': 0,
+                'total': 1,
+                'status': 'Pending...'
+            }
+        elif task.state != 'FAILURE':
+            response = {
+                'state': task.state,
+                'current': task.info.get('current', 0),
+                'total': task.info.get('total', 1),
+                'status': task.info.get('status', '')
+            }
+            if 'result' in task.info:
+                response['result'] = task.info['result']
+            else:
+                # something went wrong in the background job
+                response = {
+                    'state': task.state,
+                    'current': 1,
+                    'total': 1,
+                    'status': str(task.info),  # this is the exception raised
+                }
+    return jsonify(response)
 
 @mod_api.route('/cache/reset', methods=['POST'])
 def clear_cache():
@@ -174,7 +207,6 @@ def api_error_text():
 @mod_api.route('/issue/series/<int:id>', methods=['GET', 'POST'])
 #@jwt_required
 def mod_issues_list_by_series(id):
-    print(id, 'loading')
     issues=Issue(limit = request.args.get('limit', 2500), page=request.args.get('page', 0), series_id=id)
     if request.method == 'GET':
         values=['name', 'description', 'id', 'number']
@@ -228,7 +260,6 @@ def mod_issue_images(id):
 #@jwt_required
 def mod_cv_find_series():
     cvid = request.args.get('cvid') if request.args.get('cvid') else None
-    print(request.data)
     name = request.get_json()['name'] if request.get_json()['name'] else None
     if request.method == 'POST':
         series = CVFetch(cvid=cvid, name=name).process_cv_get_series_by_name()
@@ -302,7 +333,6 @@ def mod_scan_library_cv_issue_cvid(issue_id):
     if request.method == 'POST':
         issue = db_session.query(Issue).filter(Issue.id==issue_id).first()
         issue.cvid = issue.series.cvid
-        print(issue.cvid)
         issue = CVFetch(model=issue, imagetype='issue_cover').fetch_record()
         return jsonify('done')
 
@@ -323,11 +353,9 @@ def mod_scan_library_cv_series_cvid(series_id):
 def mod_series_update_by_id(series_id):
     if request.method == 'POST':
         cvid = int(request.args.get('cvid'))
-        print(cvid)
         series = Series(cvid=cvid, id=series_id).update_or_create()
         db_session.commit()
         db_session.flush()
-        print(series.cvid)
         return jsonify(series.id)
     if request.method == 'GET':
         series = Series(id=series_id).get_json_by_id()
@@ -347,8 +375,6 @@ def mod_series_manage_issues(series_id):
         return jsonify('done')
     if request.method == 'GET':
         return redirect(url_for('api.mod_issues_list_by_series', id=series_id))
-
-
 
 @mod_api.route('/issue/<int:issue_id>', methods=['GET', 'POST'])
 #@jwt_required

@@ -3,6 +3,29 @@ from cbserver.models import Arc, Character, Creator, Team, Publisher, Series, Is
 from cbserver.models.database import db_session
 from cbserver.mod_comic import ImageGetter
 from cbserver.mod_lib import CBLibrary
+from config import SBConfig
+import os
+
+libfolder = SBConfig.get_lib_path()
+
+@celery.task(bind=True)
+def import_library_files(self):
+    comicfilelist = [(os.path.basename(entry.path), entry.path) for entry in CBLibrary().scantree(libfolder)]
+    total = len(comicfilelist)
+    for index, (filename, filepath) in enumerate(comicfilelist):
+        percentage = 100 * float(index)/float(total)
+        print(index, filename, filepath)
+        series, extracted = CBLibrary(filename=filename).process_series_by_filename()
+        issue=Issue(filename=filename, filepath=filepath, number=extracted[1])
+        issue=issue.update_or_create()
+        series.issues.append(issue)
+        print(percentage, filename)
+        self.update_state(state='PROGRESS',
+                      meta={'current': index, 'total': total, 'message': filename})
+    db_session.commit()
+    db_session.flush()
+    return {'current': 100, 'total': 100, 'status': 'Task completed!',
+            'result': 42}
 
 class CoverTasks(object):
     def __init__(self, **kwargs):
@@ -33,12 +56,15 @@ class CoverTasks(object):
 
 class LibraryTasks(object):
     def __init(self, **kwargs):
+        libfolder = SBConfig.get_lib_path()
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-    def import_library_files(self):
-        library = CBLibrary().import_library_files()
-        return 'ok'
+    #def import_library_files(self):
+    #    library = CBLibrary().import_library_files()
+    #    return 'ok'
+
+
 
 class CacheTasks(object):
     def __init__(self, **kwargs):

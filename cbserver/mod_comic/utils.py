@@ -1,5 +1,7 @@
 import mimetypes
 from pathlib import Path, PurePosixPath
+from config import SBConfig
+import shutil
 
 class CBUtils(object):
     def __init__(self, **kwargs):
@@ -25,7 +27,13 @@ class CBUtils(object):
         return pagelist
 
     def extractpages(self):
-        result = mimetypes.guess_type(self.filepath)
-        if result and result[0] and 'image' in result[0]:
-            return True
-        return False
+        outpath=SBConfig.get_read_path()  + '/' + str(self.archiveinstance.id) + '/'
+        for file in self.pagelist:
+            self.filename=file.filename
+            if True: #self.filter():
+                outputpath = (outpath + PurePosixPath(file.filename).name)
+                try:
+                    with self.archiveinstance.fp.open(file) as temp, open(outputpath, 'wb') as f:
+                        shutil.copyfileobj(temp, f)
+                except Exception as e:
+                    print(e)

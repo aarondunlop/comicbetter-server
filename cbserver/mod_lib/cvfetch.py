@@ -192,7 +192,6 @@ class CVFetch(object):
     def process_cv_get_series_by_name(self):
         importer = CVWrapper(name=self.name)
         series_matches = importer.find_series_matches()
-        print(series_matches)
         return series_matches
 
 #def process_library_files():
