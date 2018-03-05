@@ -90,7 +90,7 @@ class CBFile(object):
         try:
             im = Image.open(self.source_path)
             im.thumbnail(dimensions, Image.ANTIALIAS)
-            im.save(dest_filename, "JPEG")
+            im.save(dest_filename)
             return dest_filename
         except IOError as e:
             print(e)
@@ -123,7 +123,7 @@ class CBFile(object):
             try:
                 os.makedirs(self.dest_path)
             except:
-                raise
+                pass
 
     def make_source_path(self):
         if not os.path.exists(self.issuecoverpath):

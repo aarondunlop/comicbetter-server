@@ -19,4 +19,10 @@ class SBTar(object):
 
     def extract(self):
         pagelist = self.fp.infolist()
-        result = CBUtils(pagelist=pagelist, archiveinstance=self).extractpages()
+        outpath, filename = CBUtils(pagenum=self.pagenum, pagelist=pagelist, archiveinstance=self).getpaths()
+        try:
+            with self.fp.extractfile(filename) as temp, open(outpath, 'wb') as f: #This actually gets obj from archive.
+                shutil.copyfileobj(temp, f)
+        except Exception as e:
+            print(e)
+        return outpath            

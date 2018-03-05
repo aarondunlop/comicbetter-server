@@ -8,9 +8,11 @@ from .utils import CBUtils
 logger = logging.getLogger(__name__)
 
 class SBZip(object):
-    def __init__(self, filename, id=None):
-        self.fp = zipfile.ZipFile(filename, 'r')
-        self.id = id
+    def __init__(self, **kwargs):
+        id=None
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        self.fp = zipfile.ZipFile(self.filename, 'r')
 
     def listpages(self):
         pagelist = self.fp.infolist()
@@ -19,4 +21,10 @@ class SBZip(object):
 
     def extract(self):
         pagelist = self.fp.infolist()
-        result = CBUtils(pagelist=pagelist, archiveinstance=self).extractpages()
+        outpath, filename = CBUtils(pagenum=self.pagenum, pagelist=pagelist, archiveinstance=self).getpaths()
+        try:
+            with self.fp.open(filename) as temp, open(outpath, 'wb') as f: #This actually gets obj from archive.
+                shutil.copyfileobj(temp, f)
+        except Exception as e:
+            print(e)
+        return outpath

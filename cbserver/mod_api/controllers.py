@@ -1,9 +1,10 @@
 from flask import Blueprint, g, request, jsonify, send_file, abort, Response, make_response, redirect, url_for
 
 # Import the database object from the main app module
-from cbserver import cbserver
+from cbserver import cbserver, celery
+#from celery.result import GroupResult
 
-from cbserver.tasks import import_library_files, CoverTasks, LibraryTasks
+from cbserver.tasks import extract_image, import_library_files
 #from cbserver.mod_lib.tasks import long_task
 from cbserver.mod_lib.extractimages import ComicImageExtracter
 from cbserver.models import Series, Issue, User # issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced,
@@ -13,6 +14,8 @@ from cbserver.mod_lib.cvfetch import CVFetch
 from cbserver.mod_lib.cbcache import CBCache
 from cbserver.mod_lib import CBLibrary
 import time
+
+from celery import group
 
 from cbserver.mod_comic import ImageGetter
 from cbserver.mod_devices import SBDevices
@@ -51,21 +54,68 @@ def cb_init():
     db_session.commit()
     return jsonify('done')
 
+@mod_api.route('/library/covers/issues', methods=['POST', 'GET'])
+def get_issue_covers():
+    if request.method == 'POST':
+        issue_set = db_session.query(Issue).all()
+        sizes = ['small', 'tiny', 'thumb']
+        covers=[issue.id for issue in issue_set]
+        #[extract_image(id, sizes, 'series_cover', True) for id in covers]
+        job = group(extract_image.s(id, sizes, 'issue_cover', True) for id in covers)
+        result = job.apply_async()
+        result.save()
+        return jsonify({}), 202, {'Location': url_for('api.get_issue_covers',
+                                                _external=True,
+                                                _scheme='https',
+                                                 task=result.id)}
 
-@mod_api.route('/library/covers/issues', methods=['POST'])
-def extract_issue_covers():
-    issue_covers = CoverTasks().extract_issues()
-    return jsonify(issue_covers)
+    if request.method == 'GET':
+        taskid = request.args.get('task', None)
+        task = celery.GroupResult.restore(taskid)
+        if task is not None:
+            results={}
+            results['total'] = len(task.results)
+            results['processed'] = task.completed_count()
+            results['failed'] = task.failed()
+            results['waiting'] = task.waiting()
+            results['successful'] = task.successful()
+            return jsonify(results)
+        else:
+            return 'Task already completed.'
 
-@mod_api.route('/library/covers/series', methods=['POST'])
-def extract_series_covers():
-    series_covers = CoverTasks().extract_series()
-    return jsonify(series_covers)
+@mod_api.route('/library/covers/series', methods=['POST', 'GET'])
+def get_series_covers():
+    if request.method == 'POST':
+        series_set = db_session.query(Series).all()
+        sizes = ['small', 'tiny', 'thumb']
+        covers=[series.id for series in series_set]
+        #[extract_image(id, sizes, 'series_cover', True) for id in covers]
+        job = group(extract_image.s(id, sizes, 'series_cover', True) for id in covers)
+        result = job.apply_async()
+        result.save()
+        return jsonify({}), 202, {'Location': url_for('api.get_series_covers',
+                                                _external=True,
+                                                _scheme='https',
+                                                 task=result.id)}
+
+    if request.method == 'GET':
+        taskid = request.args.get('task', None)
+        task = celery.GroupResult.restore(taskid)
+        if task is not None:
+            results={}
+            results['total'] = len(task.results)
+            results['processed'] = task.completed_count()
+            results['failed'] = task.failed()
+            results['waiting'] = task.waiting()
+            results['successful'] = task.successful()
+            return jsonify(results)
+        else:
+            return 'Task already completed.'
 
 @mod_api.route('/library/covers/all', methods=['POST'])
-def extract_all_covers():
-    series_covers = CoverTasks().extract_series()
-    issue_covers = CoverTasks().extract_issues()
+def get_all_covers():
+    series_covers = extract_series_covers()
+    issue_covers = extract_issue_covers()
     return jsonify(series_covers, issue_covers)
 
 @mod_api.route('/library/import', methods=['GET', 'POST'])
@@ -73,41 +123,17 @@ def extract_all_covers():
 def mod_scan_library_files():
     if request.method == 'POST':
         task = import_library_files.apply_async()
-        return jsonify({}), 202, {'Location': url_for('api.mod_library_scan_status',
-                                              task_id=task.id)}
-
-@mod_api.route('/library/import/<task_id>', methods=['GET'])
-#@jwt_required
-def mod_library_scan_status(task_id):
+        return jsonify({}), 202, {'Location': url_for('api.mod_scan_library_files',
+                                            _external=True,
+                                            _scheme='https',
+                                             task=task.id)}
     if request.method == 'GET':
-        task = import_library_files.AsyncResult(task_id)
-        response={}
-        if task.state == 'PENDING':
-            # job did not start yet
-            response = {
-                'state': task.state,
-                'current': 0,
-                'total': 1,
-                'status': 'Pending...'
-            }
-        elif task.state != 'FAILURE':
-            response = {
-                'state': task.state,
-                'current': task.info.get('current', 0),
-                'total': task.info.get('total', 1),
-                'status': task.info.get('status', '')
-            }
-            if 'result' in task.info:
-                response['result'] = task.info['result']
-            else:
-                # something went wrong in the background job
-                response = {
-                    'state': task.state,
-                    'current': 1,
-                    'total': 1,
-                    'status': str(task.info),  # this is the exception raised
-                }
-    return jsonify(response)
+        taskid = request.args.get('task', None)
+        task = celery.AsyncResult(taskid)
+        if task is not None:
+            #print(task.__dict__.items())
+            return jsonify(task.info, task.state)
+    return jsonify(task)
 
 @mod_api.route('/cache/reset', methods=['POST'])
 def clear_cache():
@@ -358,8 +384,8 @@ def mod_series_update_by_id(series_id):
         db_session.flush()
         return jsonify(series.id)
     if request.method == 'GET':
-        series = Series(id=series_id).get_json_by_id()
-        return jsonify(series)
+        series = db_session.query(Series).filter(Series.id==series_id).first()
+        return jsonify({ key: value for key, value in series.__dict__.items() if not key == "_sa_instance_state" })
 
 @mod_api.route('/series/issues/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required
