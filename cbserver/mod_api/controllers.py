@@ -4,6 +4,9 @@ from flask import Blueprint, g, request, jsonify, send_file, abort, Response, ma
 from cbserver import cbserver, celery
 #from celery.result import GroupResult
 
+from natsort import natsorted
+from operator import itemgetter
+
 from cbserver.tasks import extract_image, import_library_files
 #from cbserver.mod_lib.tasks import long_task
 from cbserver.mod_lib.extractimages import ComicImageExtracter
@@ -112,11 +115,23 @@ def get_series_covers():
         else:
             return 'Task already completed.'
 
-@mod_api.route('/library/covers/all', methods=['POST'])
-def get_all_covers():
-    series_covers = extract_series_covers()
-    issue_covers = extract_issue_covers()
-    return jsonify(series_covers, issue_covers)
+@mod_api.route('/library/merge/series', methods=['POST'])
+def merge_series():
+    if request.method == 'POST':
+        toid = request.args.get('toid', None)
+        fromid = request.args.get('fromid', None)
+        to_series = db_session.query(Series).filter(Series.id==toid).first()
+        from_series = db_session.query(Series).filter(Series.id==fromid).first()
+        #issue = db_session.query(Issue).join(Issue.series).filter(Issue.series_id==self.id).first() or False
+        print(to_series.issues)
+        print(from_series.issues)
+        for issue in from_series.issues:
+            issue.series_id=toid
+        db_session.delete(from_series)
+        db_session.commit()
+        db_session.flush()
+    return 'done'
+    #return jsonify(series_covers, issue_covers)
 
 @mod_api.route('/library/import', methods=['GET', 'POST'])
 #@jwt_required
@@ -184,9 +199,19 @@ def refresh():
 @mod_api.route('/series', methods=['GET', 'POST'])
 #@jwt_required
 def mod_series_list():
-    series=Series(limit = request.args.get('limit', 2500), page=request.args.get('page', 0))
+    #series=Series(limit = request.args.get('limit', 2500), page=request.args.get('page', 0))
+    response=[]
+    series = db_session.query(Series).all()
+    for row in series:
+        response.append({
+            'description': row.description,
+            'id': row.id,
+            'name': row.name,
+            'year': row.year
+        })
     if request.method == 'GET':
-        return jsonify(series.getlist())
+        #return jsonify(natsorted(response, key=itemgetter(*['name'])))
+        return jsonify(response)
 
 @mod_api.route('/series/cover/<int:id>', methods=['GET', 'POST'])
 #This will look up the DB record to see if a cover is specified. If not, it will return the one extracted
@@ -268,7 +293,7 @@ def api_issue_return_covers(id):
 #@jwt_required
 def mod_issue_images(id):
     if request.method == 'GET' and not request.args.get('page'):
-        pages = ImageGetter(id=id)
+        pages = ImageGetter(id=id, pagenum=0)
         result = pages.get_issue_pages()
         return jsonify(result)
     if request.method == 'GET' and request.args.get('page'):
@@ -385,7 +410,10 @@ def mod_series_update_by_id(series_id):
         return jsonify(series.id)
     if request.method == 'GET':
         series = db_session.query(Series).filter(Series.id==series_id).first()
-        return jsonify({ key: value for key, value in series.__dict__.items() if not key == "_sa_instance_state" })
+        if series:
+            return jsonify({ key: value for key, value in series.__dict__.items() if not key == "_sa_instance_state"})
+        else:
+            return abort(404)
 
 @mod_api.route('/series/issues/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required

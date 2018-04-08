@@ -3,7 +3,7 @@
 from cbserver.models.database import Base, db_session
 from datetime import datetime
 
-from sqlalchemy import Table, Column, Integer, ForeignKey, String, DateTime
+from sqlalchemy import Table, Column, Integer, ForeignKey, String, DateTime, asc
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 
@@ -105,7 +105,8 @@ class Issue(Base, Serializer):
     def getserieslist(self):
         issues=''
         diff=int(self.limit)*int(self.page)
-        issues = db_session.query(Issue).filter(Issue.series_id == self.series_id).limit(self.limit).offset(diff).all()
+        issues = db_session.query(Issue).order_by(Issue.number.asc()).filter(Issue.series_id == self.series_id).limit(self.limit).offset(diff).all()
+        #results = sorted(issues, key=lambda o: A.index(o.id))
         #values=['name', 'description', 'id']
         #issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id])) for row in issues]
         return issues
