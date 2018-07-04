@@ -7,7 +7,6 @@ from pathlib import Path, PurePosixPath
 from cbserver.models.database import db_session
 from sqlalchemy import exc
 from datetime import datetime
-
 from .cbfile import CBFile
 
 from PIL import Image
@@ -58,6 +57,16 @@ class CVFetch(object):
         self.filename = self.dest_path + PurePosixPath(self.url).name
         self.download_file()
         return self.filename
+
+    def process_cv_get_issue_details(self):
+        details = []
+        results = CVWrapper(cvid=str(self.model.cvid)).get_series_details()
+#        for issue in self.issues:
+#            details=results[str(issue.number)]
+#            issue.name=details['name'],
+#            issue.cvid=details['id'],
+            #cover = CVFetch(model=issue, cvid=issue.cvid).fetch_covers()
+        return 'ok'
 
     def process_cv_get_issue_details_by_id(self): #This is unused for now.
         issue=issue_get_by_issueid(issue_id)

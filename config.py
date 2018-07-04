@@ -11,7 +11,17 @@ class FlaskConfig(object):
 
     # Define the database - we are working with
     # SQLite for this example
-    SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, cfg['sqlite']['name'])
+    #SQLALCHEMY_DATABASE_URI = 'sqlite:///' + os.path.join(BASE_DIR, cfg['sqlite']['name'])
+    db_user=cfg['mysql']['username']
+    db_pass=cfg['mysql']['password']
+    db_host=cfg['mysql']['host']
+    SQLALCHEMY_DATABASE_URI = 'mysql://' + db_user + ':' + db_pass + '@' + db_host + '/cb'
+    #mysql://username:password@server/db
+
+    SQLALCHEMY_BINDS = {
+        'gcd': 'mysql://' + db_user + ':' + db_pass + '@' + db_host + '/gcd',
+    }
+
     DATABASE_CONNECT_OPTIONS = {}
 
     # Application threads. A common general assumption is
@@ -52,9 +62,12 @@ class SBConfig(object):
 
     @staticmethod
     def get_db_config():
-        value = ('sqlite:///' + SBConfig.cfg()['db']['sqlite']['path'])
+        db_user=cfg['mysql']['username']
+        db_pass=cfg['mysql']['password']
+        db_host=cfg['mysql']['host']
+        value = ('mysql://' + db_user + ':' + db_pass + '@' + db_host)
         print(value)
-        return ('sqlite:///' + str(SBConfig.cfg()['db']['sqlite']['path']))
+        return value
 
     @staticmethod
     def get_image_path():

@@ -7,6 +7,7 @@ from cachecontrol.caches.file_cache import FileCache
 from cachecontrol.heuristics import ExpiresAfter
 from requests_toolbelt.utils import dump
 from config import SBConfig
+from natsort import natsorted
 
 from cbserver.models import Arc, Character, Creator, Team, Publisher, Series, Issue, Settings
 #from .comicfilehandler import ComicFileHandler
@@ -107,18 +108,18 @@ class CVWrapper(object):
 
     def get_series_details(self):
         query_params = self.base_params
-        query_params['resources'] = 'volume'
-        query_params['field_list'] = 'deck,description,image,name,publisher,api_detail_url'
-        response = self._query_cv((self.baseurl + 'volume/4050-' + self.cvid), query_params)
-        self.query_response = response['results']
-        print(self.query_response)
-        self.get_description(self.query_response)
-        #print(query_response)
-        #description = query_response['results']['description']
-        #print(description)
-        #if description is not None:
-        #    query_response['results']['description'] = self.get_p(query_response['results']['description'])
-        return self.query_response
+        #query_params['resources'] = 'issues'
+        query_params['filter'] = 'volume:796'
+        query_params['field_list'] = 'deck,description,cover_date,name,image,issue_number'
+        response = self._query_cv((self.baseurl + 'issues/' + self.cvid), query_params)
+        pages = int(int(response['number_of_total_results']) / int(response['number_of_page_results']))
+        details = response['results']
+        for page in [x for x in natsorted(range(pages)) if x !=0]:
+            query_params['offset'] = str(page * 100)
+            response = self._query_cv((self.baseurl + 'issues/' + self.cvid), query_params)
+            details.append(response['results'])
+        print(details)
+        return response
 
     def get_issue_details(self):
         query_params = self.base_params

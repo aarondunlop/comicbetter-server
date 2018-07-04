@@ -22,7 +22,12 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from cbserver.models.database import Session
 # Define the WSGI application object
+
+from flask_cors import CORS
+
 cbserver = Flask(__name__)
+CORS(cbserver)
+logging.getLogger('flask_cors').level = logging.DEBUG
 
 # Configurations
 cbserver.config.from_object('config.FlaskConfig')

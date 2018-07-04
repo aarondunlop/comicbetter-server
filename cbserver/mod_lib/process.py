@@ -4,13 +4,13 @@ from PIL import Image
 from app import db
 import logging
 
+from os import scandir, walk
+from config import SBConfig
+
 logger = logging.getLogger(__name__)
 
-from config import SBConfig
 apikey = SBConfig.get_api_key()
 libfolder = SBConfig.get_lib_path()
-
-from os import scandir, walk
 
 class CVWrapper(object):
     def __init__(self, **kwargs):

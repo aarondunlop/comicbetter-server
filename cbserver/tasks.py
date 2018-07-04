@@ -19,7 +19,12 @@ def import_library_files(self):
     for index, (filename, filepath) in enumerate(comicfilelist):
         percentage = 100 * float(index)/float(total)
         series, extracted = CBLibrary(filename=filename).process_series_by_filename()
-        issue=Issue(filename=filename, filepath=filepath, number=extracted[1])
+        if (extracted[1] is not None and extracted[1].isdigit()):
+            number = extracted[1]
+        else:
+            number = 0
+        print(number, extracted, filename, filepath)
+        issue=Issue(filename=filename, filepath=filepath, number=number)
         issue=issue.update_or_create()
         series.issues.append(issue)
         self.update_state(state='PROGRESS',

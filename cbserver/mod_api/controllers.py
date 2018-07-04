@@ -4,6 +4,7 @@ from flask import Blueprint, g, request, jsonify, send_file, abort, Response, ma
 from cbserver import cbserver, celery
 #from celery.result import GroupResult
 
+import bisect
 from natsort import natsorted
 from operator import itemgetter
 
@@ -12,6 +13,7 @@ from cbserver.tasks import extract_image, import_library_files
 from cbserver.mod_lib.extractimages import ComicImageExtracter
 from cbserver.models import Series, Issue, User # issues_list, series_list, series_list_by_id, issues_list_by_series, series_get_by_seriesid, issue_update_by_id, issues_get_by_issueid, series_update_or_create, Device, sync, synced,
 from cbserver.models.database import db_session, init_db, reset_db
+from cbserver.models.gcd_database import gcd_db_session, G_Issues, G_Series, G_Publisher, G_Story, G_Brand, G_Language
 from cbserver.mod_lib.cbfile import CBFile
 from cbserver.mod_lib.cvfetch import CVFetch
 from cbserver.mod_lib.cbcache import CBCache
@@ -24,6 +26,7 @@ from cbserver.mod_comic import ImageGetter
 from cbserver.mod_devices import SBDevices
 import json
 import io
+import re
 from config import SBConfig
 
 mod_api = Blueprint('api', __name__, url_prefix='/api')
@@ -199,9 +202,12 @@ def refresh():
 @mod_api.route('/series', methods=['GET', 'POST'])
 #@jwt_required
 def mod_series_list():
-    #series=Series(limit = request.args.get('limit', 2500), page=request.args.get('page', 0))
+    if request.method == 'POST':
+        return redirect(url_for('api.mod_series_list', _scheme='https', _external=True))
+    series = db_session.query(Series).limit(request.args.get('limit', 2500)).all()
+
     response=[]
-    series = db_session.query(Series).all()
+    print(series)
     for row in series:
         response.append({
             'description': row.description,
@@ -213,6 +219,8 @@ def mod_series_list():
         #return jsonify(natsorted(response, key=itemgetter(*['name'])))
         return jsonify(response)
 
+
+
 @mod_api.route('/series/cover/<int:id>', methods=['GET', 'POST'])
 #This will look up the DB record to see if a cover is specified. If not, it will return the one extracted
 #from the comic. Params list will list all covers, and param numbers will specify one to be returned.
@@ -223,7 +231,7 @@ def api_series_return_covers(id):
     if series == None:
         error_text = 'Series with that ID does not exist.'
         error_status = 404
-        return redirect(url_for('api.api_error_text'))
+        return redirect(url_for('api.api_error_text', _scheme='https', _external=True))
     imagesize = request.args.get('size')
     if imagesize not in SBConfig.get_image_sizes():
         return jsonify("Please provide a valid size. Options are: " + str(SBConfig.get_image_sizes()))
@@ -240,7 +248,7 @@ def api_series_return_covers(id):
             else:
                 error_text = 'File could not be extracted. Review logs.'
                 error_status = 404
-                return redirect(url_for('api.api_error_text'))
+                return redirect(url_for('api.api_error_text', _scheme='https', _external=True))
         except:
             return 'ok'
             abort(500)
@@ -307,6 +315,63 @@ def mod_issue_images(id):
             return jsonify('ok')
     return 'ok'
 
+@mod_api.route('/search/series', methods=['POST'])
+#@jwt_required
+#Todo, language support - set _en
+def mod_search_series():
+    content = request.get_json(silent=True)
+    if request.method == 'POST':
+        response=[]
+        name = content.get("name", None)
+        id = int(request.args.get("id", default=None))
+        if id:
+            series = db_session.query(Series).filter(Series.id==id).first()
+            name = content.get("name", series.name)
+            number=len(series.issues)
+            year=content.get("year", None)
+            #print(number, series.name, id)
+            if not year:
+                year=series.year if series.year else '%'
+            g_series = gcd_db_session.query(G_Series).join(G_Language).filter(
+                G_Series.name.contains(name),
+                G_Series.year_began.like(year),
+                G_Language.code == 'en'
+            ).all()
+            sortedlist = natsorted(series.issues, key=lambda k: k.filename)
+            print(len(sortedlist))
+            sl = []
+            for issue in sortedlist:
+                num = ''.join(re.findall(r"\D(\d{3})\D", issue.filename))
+                sl.append(issue.filepath)
+                #print(issue.filepath)
+            s = set()
+            #duplicates = set(x for x in sl if x in s or s.add(x))
+            return jsonify([dict({ key: value for key, value in list(row.__dict__.items()) if not key == "_sa_instance_state" }) for row in g_series])
+            #return jsonify([dict({ key: value for key, value in list(row.__dict__.items()) if not key == "_sa_instance_state" }) for row in series.issues])
+            #newlist = natsorted(sl)
+            #print(len(newlist) != len(set(sortedlist)))
+            #print(len(duplicates))
+            #print(duplicates)
+            return jsonify(g_series)
+
+
+        elif name:
+            g_series = gcd_db_session.query(G_Series).filter(G_Series.name.contains(name)).all()
+        else:
+            return 'No results found, or Name unset.'
+        #issue = db_session.query(Issue).filter(Issue.id==issue_id).first()
+        for row in g_series:
+            response.append({
+                'id': row.id,
+                'name': row.name,
+                #'year': year_began
+            })
+        #G_Issues, G_Series, G_Publisher, G_Story, G_Brand
+        #Address = Base.classes.address
+        #parsedseries=[dict({ key: value for key, value in list(row.__dict__.items()) if not key == "_sa_instance_state" }) for row in series]
+    return jsonify(len(response))
+
+
 @mod_api.route('/cv/search/series', methods=['POST'])
 #@jwt_required
 def mod_cv_find_series():
@@ -356,7 +421,7 @@ def mod_get_cover_by_cvid():
             else:
                 error_text = 'File could not be extracted. Review logs.'
                 error_status = 404
-                return redirect(url_for('api.api_error_text'))
+                return redirect(url_for('api.api_error_text', _scheme='https', _external=True))
         except:
             return 'ok'
             abort(500)
@@ -366,6 +431,8 @@ def mod_get_cover_by_cvid():
 def mod_issue_list():
     if request.method == 'GET':
         issues = Issue(limit = request.args.get('limit', 2500), page=request.args.get('page', 0)).getlist()
+        issues = ({ key: value for key, value in list(Issue(id=issue_id).find_by_id().__dict__.items()) if not key == "_sa_instance_state" })
+
         try:
             if issues:
                 response = issues
@@ -398,6 +465,31 @@ def mod_scan_library_cv_series_cvid(series_id):
          #jsonify(process_cv_get_series_details_by_id(series_id, cvid))
         return jsonify('done')
 
+@mod_api.route('/cv/series/issues/<int:series_id>', methods=['GET', 'POST'])
+#@jwt_required
+def mod_cv_get_series_issues(series_id):
+    if request.method == 'POST':
+        #series = db_session.query(Series).filter_by(id=series_id).first()
+        series = db_session.query(Series).filter_by(id = series_id).first()
+        issues = db_session.query(Issue).order_by(Issue.number.asc()).filter(Issue.series_id == series_id).all()
+        records = CVFetch(model=series, issues=issues).process_cv_get_issue_details()
+        #issues = db_session.query(Issue).order_by(Issue.number.asc()).filter(Issue.series_id == series_id).all()
+        #for issue in issues:
+            #print(issue.number)
+        #    if issue.number < 2:
+        #        record = CVFetch(model=issue).process_cv_get_issue_details()
+        #s.query(Child).join(Parent, Child.parent).filter(Child.name == 'Xavier').filter(Parent.name == 'Chris')
+
+        #for issue in series.issues:
+            #record = CVFetch(model=issue, imagetype='issue_cover').fetch_record()
+        #    print(issue)
+        #db_session.commit()
+        #db_session.flush()
+
+        return jsonify('done')
+    if request.method == 'GET':
+        return redirect(url_for('api.mod_issues_list_by_series', _scheme='https', _external=True, id=series_id))
+
 #Ensure cvid is set.
 @mod_api.route('/series/<int:series_id>', methods=['GET', 'POST'])
 #@jwt_required
@@ -428,7 +520,7 @@ def mod_series_manage_issues(series_id):
 
         return jsonify('done')
     if request.method == 'GET':
-        return redirect(url_for('api.mod_issues_list_by_series', id=series_id))
+        return redirect(url_for('api.mod_issues_list_by_series', _scheme='https', _external=True, id=series_id))
 
 @mod_api.route('/issue/<int:issue_id>', methods=['GET', 'POST'])
 #@jwt_required

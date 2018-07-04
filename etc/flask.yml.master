@@ -3,12 +3,17 @@ app:
      name: ComicBetter
 
 schema:
-    engine: sqlite
+    engine: mysql
 
 flask:
-    secret: 
-    salt: 
-    csrf: 
+    secret:
+    salt:
+    csrf:
 
 sqlite:
     name: var/app.db
+
+mysql:
+    username: change_user
+    password: change_pass
+    host: 127.0.0.1

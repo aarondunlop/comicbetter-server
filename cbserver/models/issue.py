@@ -60,8 +60,8 @@ class Issue(Base, Serializer):
     image_thumb = Column(String(255))
     image_screen = Column(String(255))
     image_super = Column(String(255))
-    filepath    = Column(String(128),  nullable=False)
-    filename    = Column(String(128))
+    filepath    = Column(String(255),  nullable=False)
+    filename    = Column(String(255))
     devices = relationship(
     "Device",
     secondary=deviceissues,
@@ -96,10 +96,12 @@ class Issue(Base, Serializer):
     def getlist(self):
         issues=''
         diff=int(self.limit)*int(self.page)
-        issues = db_session.query(Issue).limit(self.limit).offset(diff).all()
-        print(db_session.query(Issue).all())
-        values=['name', 'description', 'id', 'series_id']
-        issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id, row.series_id])) for row in issues]
+        #issues = db_session.query(Issue).limit(self.limit).offset(diff).all()
+        #values=['name', 'description', 'id', 'series_id']
+        #issues = [dict(zip(values, [row.name, row.description if row.name and row.description else None, row.id, row.series_id])) for row in issues]
+        issues = db_session.query(Issue).order_by(Issue.number.asc()).limit(self.limit).offset(diff).all()
+        #issues = ({ key: value for key, value in list(Issue(id=issue_id).find_by_id().__dict__.items()) if not key == "_sa_instance_state" })
+        issues = [dict({ key: value for key, value in list(row.__dict__.items()) if not key == "_sa_instance_state" }) for row in issues]
         return issues
 
     def getserieslist(self):
