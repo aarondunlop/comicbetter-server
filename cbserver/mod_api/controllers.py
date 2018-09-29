@@ -19,7 +19,7 @@ from cbserver.mod_lib.cvfetch import CVFetch
 from cbserver.mod_lib.cbcache import CBCache
 from cbserver.mod_lib import CBLibrary
 import time
-
+import pprint
 from celery import group
 
 from cbserver.mod_comic import ImageGetter
@@ -50,8 +50,15 @@ def get_servername():
 @mod_api.route('/init', methods=['POST'])
 def cb_init():
     data = request
-    username = request.get_json()['username']
-    password = request.get_json()['password']
+    pprint.pprint(request)
+    print(request.get_json())
+    test = request.get_json()
+    print(test)
+    #username = request.get_json()['username']
+    #password = request.get_json()['password']
+    #print(username, password)
+    username = 'a'
+    password = 'a'
     init_db()
     user = User(name=username, password=password)
     user.update_password()

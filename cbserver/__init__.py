@@ -27,7 +27,7 @@ from flask_cors import CORS
 
 cbserver = Flask(__name__)
 CORS(cbserver)
-logging.getLogger('flask_cors').level = logging.DEBUG
+logging.getLogger('flask_cors').level = logging.ERROR
 
 # Configurations
 cbserver.config.from_object('config.FlaskConfig')
