@@ -1,59 +1,57 @@
 [[source]]
-url
-verify_ssl
-name
+
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
 
 [packages]
-"autopep8"
-bcrypt
-"beautifulsoup4"
-"bs4"
-cachetools
-certifi
-cffi
-chardet
-click
-firebase-admin
-"httplib2"
-idna
-itsdangerous
-jws
-lockfile
-msgpack-python
-"oauth2client"
-patool
-protobuf
-"pyasn1"
-"pyasn1-modules"
-pycodestyle
-pycparser
-pycryptodome
-pylzma
-rarfile
-requests
-requests-toolbelt
-rsa
-six
-"urllib3"
-virtualenv
-wrapt
-graphene-sqlalchemy
-CacheControl
-Flask
-Flask-JWT
-Flask-JWT-Extended
-Flask-SQLAlchemy
-"Jinja2"
-MarkupSafe
-Pillow
-PyJWT
-Pyrebase
-python_jwt
-PyYAML
-SQLAlchemy
-Werkzeug
+autopep8 = "*"
+bcrypt = "*"
+"beautifulsoup4" = "*"
+"bs4" = "*"
+cachetools = "*"
+certifi = "*"
+cffi = "*"
+chardet = "*"
+click = "*"
+firebase-admin = "*"
+"httplib2" = "*"
+idna = "*"
+itsdangerous = "*"
+jws = "*"
+lockfile = "*"
+msgpack-python = "*"
+oauth2client = "*"
+patool = "*"
+protobuf = "*"
+"pyasn1" = "*"
+"pyasn1-modules" = "*"
+pycodestyle = "*"
+pycparser = "*"
+pycryptodome = "*"
+pylzma = "*"
+rarfile = "*"
+requests = "*"
+requests-toolbelt = "*"
+rsa = "*"
+six = "*"
+"urllib3" = "*"
+virtualenv = "*"
+wrapt = "*"
+graphene-sqlalchemy = "*"
+CacheControl = "*"
+Flask = "*"
+Flask-JWT-Extended = "*"
+Flask-SQLAlchemy = "*"
+"Jinja2" = "*"
+MarkupSafe = "*"
+Pillow = "*"
+PyJWT = "*"
+PyYAML = "*"
+SQLAlchemy = "*"
+Werkzeug = "*"
 
 [dev-packages]
 
 [requires]
-python_version
+python_version = "3.6"
