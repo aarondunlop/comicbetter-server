@@ -8,6 +8,7 @@ comics/
 var/comicvine-cache/
 var/app.db
 .remote-sync.json
+get-pip.py
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
