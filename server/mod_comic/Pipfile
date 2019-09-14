@@ -1,5 +1,4 @@
 [[source]]
-
 url = "https://pypi.python.org/simple"
 verify_ssl = true
 name = "pypi"
@@ -14,7 +13,6 @@ certifi = "*"
 cffi = "*"
 chardet = "*"
 click = "*"
-firebase-admin = "*"
 "httplib2" = "*"
 idna = "*"
 itsdangerous = "*"
@@ -50,6 +48,14 @@ PyJWT = "*"
 PyYAML = "*"
 SQLAlchemy = "*"
 Werkzeug = "*"
+celery = "*"
+sqlalchemy-utils = "*"
+flask-cors = "*"
+mysqlclient = "*"
+python-magic = "*"
+flask-graphql = "*"
+graphene = ">=2.0"
+redis = "*"
 
 [dev-packages]
 

@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 # Import flask and template operators
 from flask import Flask, g, render_template, request, make_response
+from flask_graphql import GraphQLView
 import logging
 import random
 from sqlalchemy import create_engine
@@ -21,7 +22,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from cbserver.models.database import Session
-# Define the WSGI application object
+from cbserver.schema import schema
 
 from flask_cors import CORS
 
@@ -103,3 +104,12 @@ cbserver.register_blueprint(api_module)
 # Build the database:
 # This will create the database file using SQLAlchemy
 #db.create_all()
+
+cbserver.add_url_rule(
+    '/graphql',
+    view_func=GraphQLView.as_view(
+        'graphql',
+        schema=schema,
+        graphiql=True # for having the GraphiQL interface
+    )
+)
