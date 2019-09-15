@@ -4,14 +4,14 @@ services:
   comicbetter:
     command: /var/lib/comicbetter/start_comicbetter
     build: .
-    container_name: comicbetter
+    container_name: comicbetter-server
     environment:
       - PUID=1016
       - PGID=1016
     volumes:
       - /mnt/scratch/containers/data/comicbetter/config:/config
       - /mnt/scratch/containers/data/comicbetter/etc:/etc/comicbetter
-      - /mnt/scratch/containers/data/comicbetter/var:/var/lib/comicbetter
+      - /mnt/scratch/containers/data/comicbetter/var/comicbetter:/var/lib/comicbetter
     ports:
-      - 1443:443
+      - 1443:58008
     restart: unless-stopped

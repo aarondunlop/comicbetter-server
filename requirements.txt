@@ -1,0 +1,12 @@
+bcrypt
+Flask
+Flask-SQLAlchemy
+Flask-Cors
+Flask-GraphQL
+patool
+SQLAlchemy
+SQLAlchemy-Utils
+PyYAML
+mysqlclient
+graphene
+graphene_sqlalchemy
